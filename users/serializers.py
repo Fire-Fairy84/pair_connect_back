@@ -30,15 +30,15 @@ class UserSerializer(serializers.ModelSerializer):
             'password': {'write_only': True},
         }
 
-        def validate(self, attrs):
-            if attrs['password'] != attrs['password2']:
-                raise serializers.ValidationError({'password': "Passwords don't match."})
-            return attrs
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({'password': "Passwords don't match."})
+        return attrs
 
-        def create(self, validated_data):
-            validated_data.pop('password2')
-            password = validated_data.pop('password')
-            user = CustomUser(**validated_data)
-            user.set_password(password)
-            user.save()
-            return user
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        password = validated_data.pop('password')
+        user = CustomUser(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
