@@ -1,9 +1,12 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import CustomUser
-from django.contrib.auth.password_validation import validate_password
+from .services import create_user
+
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
     photo = serializers.ImageField(required=False)
 
@@ -30,15 +33,9 @@ class UserSerializer(serializers.ModelSerializer):
             'password': {'write_only': True},
         }
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({'password': "Passwords don't match."})
-        return attrs
-
     def create(self, validated_data):
-        validated_data.pop('password2')
-        password = validated_data.pop('password')
-        user = CustomUser(**validated_data)
-        user.set_password(password)
-        user.save()
+        try:
+            user = create_user(**validated_data)
+        except DjangoValidationError as e:
+            raise DRFValidationError(e.message_dict)
         return user
