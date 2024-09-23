@@ -4,15 +4,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-# from djoser.views import UserViewSet
-# from .models import CustomUser
-# from .serializers import CustomUserSerializer
-#
-#
-# class CustomUserViewSet(UserViewSet):
-#     queryset = CustomUser.objects.all()
-#     serializer_class = CustomUserSerializer
-#     permission_classes = [permissions.IsAuthenticated]
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        user.delete()
+        return Response({"detail": "User account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
