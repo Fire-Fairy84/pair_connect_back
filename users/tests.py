@@ -1,9 +1,11 @@
 import pytest
-# from pytest_bdd import scenarios, given, when, then, parsers
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from users.models import CustomUser
+
+
+REGISTER_URL = '/api/auth/users/'
 
 @pytest.mark.django_db
 def test_user_registration_success(client):
@@ -13,16 +15,14 @@ def test_user_registration_success(client):
     When I register with valid required data:
     Then I should receive a confirmation that my account has been created
     """
-
-    url = reverse('user-register')
     data = {
         'username': 'harrypotter',
         'email': 'harrypotter@email.com',
         'name': 'Harry Potter',
         'password': 'mypassword123',
-        'password2': 'mypassword123',
+        're_password': 'mypassword123',  # Djoser requires both password and re_password
     }
-    response = client.post(url, data)
+    response = client.post(REGISTER_URL, data)
     assert response.status_code == status.HTTP_201_CREATED
     assert CustomUser.objects.filter(username='harrypotter').exists()
 
