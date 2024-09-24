@@ -52,7 +52,17 @@ class CustomUserSerializer(UserSerializer):
             'telephone', 'linkedin_link', 'github_link', 'discord_link',
             'stack', 'level', 'prog_language'
         )
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'username', 'email']
+
+    def validate(self, data):
+        # Check if 'username' or 'email' is being updated
+        request = self.context.get('request', None)
+        if request and request.method in ['PUT', 'PATCH']:
+            if 'username' in request.data:
+                raise serializers.ValidationError({'username': 'Username cannot be changed.'})
+            if 'email' in request.data:
+                raise serializers.ValidationError({'email': 'Email cannot be changed.'})
+        return data
 
     def validate_email(self, value):
         user = self.context['request'].user
