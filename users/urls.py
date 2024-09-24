@@ -1,13 +1,13 @@
 from django.urls import path, include
+from .views import LogoutView
 from rest_framework import routers
-from .views import UserViewSet, UserCreateView, LoginView, LogoutView
+from .views import DeleteAccountView
 
 router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
-
+# router.register(r'users', UserViewSet)
+#
 urlpatterns = [
+    path('jwt/logout/', LogoutView.as_view(), name='jwt-logout'),
+    path('users/delete/', DeleteAccountView.as_view(), name='delete-account'),
     path('', include(router.urls)),
-    path('register/', UserCreateView.as_view(), name='user-register'),
-    path('login/', LoginView.as_view(), name='user-login'),
-    path('logout/', LogoutView.as_view(), name='user-logout'),
 ]
