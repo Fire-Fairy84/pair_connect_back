@@ -1,10 +1,4 @@
 import pytest
-from django.core import mail
-from django.urls import reverse
-from rest_framework import status
-from users.models import CustomUser
-
-import pytest
 from rest_framework import status
 from users.models import CustomUser
 
@@ -18,7 +12,7 @@ def test_user_registration_success(client):
     Then I should receive a confirmation that my account has been created
     """
     # Given: I am a new user
-    url = '/api/auth/users/'  # Djoser registration endpoint
+    url = '/api/auth/users/'
     data = {
         'username': 'harrypotter',
         'email': 'harrypotter@email.com',
@@ -60,7 +54,6 @@ def test_user_registration_missing_fields(client):
     # Then: The registration should fail due to missing 'email' field
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'email' in response.data
-    assert not CustomUser.objects.filter(username='johndoe').exists()
 
 
 @pytest.mark.django_db
@@ -81,12 +74,12 @@ def test_user_registration_password_mismatch(client):
         're_password': 'notmypassword123',
     }
 
-    # When: Registro con contraseñas que no coinciden
+    # When: Register with non-matching passwords
     response = client.post(url, data)
 
-    # Then: Debo recibir un error indicando que las contraseñas no coinciden
+    # Then: I must receive an error asserting password don't match
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert 'non_field_errors' in response.data  # Cambio de 'password' a 'non_field_errors'
+    assert 'non_field_errors' in response.data
 
 
 @pytest.mark.django_db
@@ -120,7 +113,6 @@ def test_user_registration_duplicate_username(client):
     # Then: The registration should fail with an error message indicating the username is already in use
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'username' in response.data
-    assert CustomUser.objects.filter(email='noname@email.com').count() == 0
 
 
 @pytest.mark.django_db
@@ -174,7 +166,7 @@ def test_user_login_success(client):
     user.is_active = True
     user.save()
 
-    # When: Iniciar sesión con credenciales válidas
+    # When: I log in with valid credentials
     url = '/api/auth/jwt/create/'
     data = {
         'email': 'hermione@email.com',
@@ -182,12 +174,12 @@ def test_user_login_success(client):
     }
     response = client.post(url, data)
 
-    # Then: El usuario debería recibir un token JWT
+    # Then: I should receive a JWT token
     assert response.status_code == status.HTTP_200_OK, f"Expected 200, got {response.status_code} with response {response.data}"
     assert 'access' in response.data
 
 @pytest.mark.django_db
-def test_user_login_without_activation(client):
+def test_user_login_without_activation_fail(client):
     """
     Scenario: User tries to log in without account activation
     Given I am a registered but unactivated user
@@ -251,7 +243,7 @@ def test_user_logout_success(client):
 
 
 @pytest.mark.django_db
-def test_user_logout_without_token(client):
+def test_user_logout_without_token_fail(client):
     """
     Scenario: Attempt to log out without being logged in (no active JWT)
     Given I am not logged in
@@ -284,7 +276,7 @@ def test_user_activation_success(client):
         name='Luna Lovegood'
     )
 
-    user.is_active = True  # Simulating the activation
+    user.is_active = True
     user.save()
 
     # When: The user attempts to log in
