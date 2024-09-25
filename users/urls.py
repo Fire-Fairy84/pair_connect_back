@@ -7,7 +7,7 @@ router = routers.DefaultRouter()
 # router.register(r'users', UserViewSet)
 #
 urlpatterns = [
-    path('jwt/logout/', LogoutView.as_view(), name='jwt-logout'),
+    # path('jwt/logout/', LogoutView.as_view(), name='jwt-logout'),
     path('users/delete/', DeleteAccountView.as_view(), name='delete-account'),
     path('auth/logout/', LogoutView.as_view(), name='logout'),
     path('auth/delete/', DeleteAccountView.as_view(), name='delete_account'),
