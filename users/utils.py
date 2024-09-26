@@ -6,9 +6,12 @@ from django.contrib.auth.tokens import default_token_generator
 
 
 def send_confirmation_email(user, token, request):
-    confirmation_url = request.build_absolute_uri(
-        f"/api/auth/users/activation/?token={token}"
-    )
+    # confirmation_url = request.build_absolute_uri(
+    #     f"/api/auth/users/activation/?token={token}"
+    # )
+    
+    frontend_url = "http://localhost:3000" 
+    confirmation_url = f"{frontend_url}/activate/{user.uid}/{token}/"
 
     email_subject = 'Confirm Your Email Address'
     email_body = render_to_string('confirmation_email.html', {
