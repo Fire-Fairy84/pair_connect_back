@@ -15,14 +15,14 @@ class Stack(models.Model):
 
 
 class Level(models.Model):
-    name = models.CharField(max_length=50)  # E.g., 'Junior', 'Mid', 'Senior'
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
 
 
 class ProgLanguage(models.Model):
-    name = models.CharField(max_length=100)  # E.g., 'Python', 'JavaScript'
+    name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name

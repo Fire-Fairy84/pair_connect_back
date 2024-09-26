@@ -4,6 +4,7 @@ from django.db import models
 from skills.models import Stack, ProgLanguage, Level
 from django.contrib.auth import get_user_model
 from rest_framework.exceptions import ValidationError
+from .services import inherit_level_from_project, validate_and_assign_stack
 
 User = get_user_model()
 
@@ -15,7 +16,7 @@ class Project(models.Model):
     image = CloudinaryField('image', null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
-    stack = models.ForeignKey(Stack, on_delete=models.CASCADE, default=1)
+    stack = models.ForeignKey(Stack, on_delete=models.CASCADE, null=True, blank=False)
     languages = models.ManyToManyField(ProgLanguage, blank=True)
     level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -31,7 +32,7 @@ class Session(models.Model):
     duration = models.DurationField(default=timedelta(hours=2))
     stack = models.ForeignKey(Stack, on_delete=models.SET_NULL, null=True, blank=True)
     level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True, blank=True)
-    prog_language = models.ForeignKey(ProgLanguage, on_delete=models.SET_NULL, null=True, blank=True)
+    languages = models.ManyToManyField(ProgLanguage, blank=True)
     session_link = models.URLField(max_length=255, null=True, blank=True)
     participant_limit = models.IntegerField(default=0)
     active = models.BooleanField(default=True)
@@ -39,22 +40,15 @@ class Session(models.Model):
     participants = models.ManyToManyField(User, related_name='sessions_joined', blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.stack:
-            if self.project.stack is None:
-                raise ValidationError("The project does not have a stack defined.")
-            if self.project.stack.name == 'Fullstack':
-                raise ValidationError("Please specify whether the session is Frontend, Backend or Full-Stack.")
-            else:
-                self.stack = self.project.stack
-        if not self.level:
-            self.level = self.project.level
-        if not self.prog_language:
-            if self.project.languages.count() > 1:
-                raise ValidationError("You must specify which programming language the session will use.")
-            elif self.project.languages.count() == 1:
-                self.prog_language = self.project.languages.first()
+        # Heredar el nivel (level) del proyecto si no está definido en la sesión
+        inherit_level_from_project(self)
 
+        # Validar y asignar el stack
+        validate_and_assign_stack(self)
+
+        # Guardar la sesión
         super(Session, self).save(*args, **kwargs)
+
 
 
 class InterestedParticipant(models.Model):
