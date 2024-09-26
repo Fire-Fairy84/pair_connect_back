@@ -3,7 +3,6 @@ from cloudinary.models import CloudinaryField
 from django.db import models
 from skills.models import Stack, ProgLanguage, Level
 from django.contrib.auth import get_user_model
-from rest_framework.exceptions import ValidationError
 from .services import inherit_level_from_project, validate_and_assign_stack
 
 User = get_user_model()
@@ -40,13 +39,10 @@ class Session(models.Model):
     participants = models.ManyToManyField(User, related_name='sessions_joined', blank=True)
 
     def save(self, *args, **kwargs):
-        # Heredar el nivel (level) del proyecto si no está definido en la sesión
         inherit_level_from_project(self)
 
-        # Validar y asignar el stack
         validate_and_assign_stack(self)
 
-        # Guardar la sesión
         super(Session, self).save(*args, **kwargs)
 
 

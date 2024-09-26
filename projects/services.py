@@ -13,13 +13,11 @@ def validate_and_assign_stack(session):
         project_stack = session.project.stack
         session_stack = session.stack
 
-        # Si el proyecto no es Fullstack, el stack de la sesión debe coincidir con el del proyecto
         if project_stack.name != 'Fullstack':
             if not session_stack or session_stack != project_stack:
                 raise ValidationError(
                     f"Invalid stack. For this project, the session must use stack {project_stack.name}.")
         else:
-            # Si el proyecto es Fullstack, permite elegir entre Fullstack, Backend o Frontend
             if session_stack.name not in ['Fullstack', 'Backend', 'Frontend']:
                 raise ValidationError("Invalid stack choice. You can only choose Fullstack, Backend, or Frontend.")
     except Exception as e:
