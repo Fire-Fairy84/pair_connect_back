@@ -9,15 +9,15 @@ User = get_user_model()
 
 
 class Project(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     image = CloudinaryField('image', null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
-    active = models.BooleanField(default=True)
-    stack = models.ForeignKey(Stack, on_delete=models.CASCADE, null=True, blank=False)
-    languages = models.ManyToManyField(ProgLanguage, blank=True)
-    level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True, blank=True)
+    active = models.BooleanField(default=False)
+    stack = models.ForeignKey(Stack, on_delete=models.CASCADE)
+    languages = models.ManyToManyField(ProgLanguage)
+    level = models.ForeignKey(Level, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
