@@ -5,15 +5,18 @@ from .models import Project, Session, InterestedParticipant
 
 class ProjectSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
-    stack = serializers.CharField(source='stack.name', read_only=True)
-    languages = serializers.SlugRelatedField(
-        many=True, slug_field='name', queryset=ProgLanguage.objects.all()
-    )
-    level = serializers.CharField(source='level.name', read_only=True)
+    # Return the `stack.name`, `level.name`, and `languages.name` for display while accepting their IDs for creation.
+    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),write_only=True)  # For writing (when creating/updating)
+    stack_name = serializers.CharField(source='stack.name', read_only=True)  # For reading (displaying stack name)
+    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)  # For writing (when creating/updating)
+    language_names = serializers.SlugRelatedField( many=True, read_only=True, slug_field='name', source='languages')  # For reading (displaying language names)
+    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),write_only=True)  # For writing (when creating/updating)
+    level_name = serializers.CharField(source='level.name', read_only=True)  # For reading (displaying level name)
+
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'image', 'stack', 'languages', 'level', 'image_url']
+        fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level', 'level_name', 'image_url']
         # Exclude 'owner' and 'active' from user input
 
     def create(self, validated_data):
