@@ -1,15 +1,24 @@
 from rest_framework import serializers
-from skills.models import Stack, Level
+from skills.models import Stack, Level, ProgLanguage
 from .models import Project, Session, InterestedParticipant
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    stack = serializers.CharField(source='stack.name', read_only=True)
+    languages = serializers.SlugRelatedField(
+        many=True, slug_field='name', queryset=ProgLanguage.objects.all()
+    )
+    level = serializers.CharField(source='level.name', read_only=True)
+
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'image', 'stack', 'languages', 'level']
+        fields = ['id', 'name', 'description', 'image', 'stack', 'languages', 'level', 'image_url']
         # Exclude 'owner' and 'active' from user input
 
     def create(self, validated_data):
+        image = validated_data.get('image')
+        print(f"Image received in create method: {image}")  # Check if the image is received
         # Extract languages
         languages_data = validated_data.pop('languages')
         # Create project without 'owner'
@@ -17,6 +26,9 @@ class ProjectSerializer(serializers.ModelSerializer):
         # Set languages
         project.languages.set(languages_data)
         return project
+
+    def get_image_url(self, obj):
+        return obj.image_url()
 
     def update(self, instance, validated_data):
         languages_data = validated_data.pop('languages', None)

@@ -19,6 +19,12 @@ class Project(models.Model):
     languages = models.ManyToManyField(ProgLanguage)
     level = models.ForeignKey(Level, on_delete=models.CASCADE)
 
+    def image_url(self):
+        # This ensures that you return the full URL to the image
+        if self.image:
+            return self.image.url
+        return None
+
     def __str__(self):
         return self.name
 
