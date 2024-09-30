@@ -5,7 +5,6 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 
 class CustomUserManager(BaseUserManager):
-    """Manager personalizado para manejar usuarios con email como USERNAME_FIELD."""
 
     use_in_migrations = True
 
@@ -14,25 +13,21 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('El campo email debe ser proporcionado')
         email = self.normalize_email(email)
 
-        # Extraer y eliminar 'username' de extra_fields
         username = extra_fields.pop('username', None)
         if not username:
             raise ValueError('El campo username debe ser proporcionado')
 
-        # Crear instancia del usuario sin duplicar 'username'
         user = self.model(email=email, username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_user(self, email, password=None, **extra_fields):
-        """Crea y guarda un usuario regular."""
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email, password=None, **extra_fields):
-        """Crea y guarda un superusuario."""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self._create_user(email, password, **extra_fields)
@@ -43,7 +38,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     photo = CloudinaryField('image', null=True, blank=True, default='https://res.cloudinary.com/dwzqcmaod/image/upload/v1727428844/default_avatar_pew52f.jpg')
     stack = models.ForeignKey(Stack, on_delete=models.SET_NULL, null=True, blank=True)
-    prog_language = models.ForeignKey(ProgLanguage, on_delete=models.SET_NULL, null=True, blank=True)
+    prog_language = models.ManyToManyField(ProgLanguage, blank=True)
     level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True, blank=True)
     about_me = models.TextField(null=True, blank=True)
     telephone = models.CharField(max_length=20, null=True, blank=True)

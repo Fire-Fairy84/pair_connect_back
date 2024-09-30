@@ -9,7 +9,6 @@ class ProjectAdmin(admin.ModelAdmin):
             'name',
             'description',
             'image',
-            'date_created',
             'active',
             'stack',
             'languages',
@@ -20,6 +19,7 @@ class ProjectAdmin(admin.ModelAdmin):
     list_filter = ('active', 'stack', 'level')
     search_fields = ('name', 'owner__username', 'stack__name', 'level__name')
     ordering = ('-date_created',)
+    readonly_fields = ('date_created',)
 
 
 class SessionAdmin(admin.ModelAdmin):

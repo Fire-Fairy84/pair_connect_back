@@ -3,21 +3,26 @@ from cloudinary.models import CloudinaryField
 from django.db import models
 from skills.models import Stack, ProgLanguage, Level
 from django.contrib.auth import get_user_model
-from .services import inherit_level_from_project, validate_and_assign_stack
+from .services import SessionService, DeveloperSuggestionService
 
 User = get_user_model()
 
 
 class Project(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     image = CloudinaryField('image', null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
-    active = models.BooleanField(default=True)
-    stack = models.ForeignKey(Stack, on_delete=models.CASCADE, null=True, blank=False)
-    languages = models.ManyToManyField(ProgLanguage, blank=True)
-    level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True, blank=True)
+    active = models.BooleanField(default=False)
+    stack = models.ForeignKey(Stack, on_delete=models.CASCADE)
+    languages = models.ManyToManyField(ProgLanguage)
+    level = models.ForeignKey(Level, on_delete=models.CASCADE)
+
+    def image_url(self):
+        if self.image:
+            return self.image.url
+        return None
 
     def __str__(self):
         return self.name
@@ -39,12 +44,15 @@ class Session(models.Model):
     participants = models.ManyToManyField(User, related_name='sessions_joined', blank=True)
 
     def save(self, *args, **kwargs):
-        inherit_level_from_project(self)
-
-        validate_and_assign_stack(self)
+        session_service = SessionService(self)
+        session_service.inherit_level_from_project()
+        session_service.validate_and_assign_stack()
 
         super(Session, self).save(*args, **kwargs)
 
+    def suggest_developers(self):
+        suggestion_service = DeveloperSuggestionService(self)
+        return suggestion_service.get_suggested_developers()
 
 
 class InterestedParticipant(models.Model):
