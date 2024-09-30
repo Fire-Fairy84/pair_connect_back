@@ -1,7 +1,7 @@
 from rest_framework import permissions, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
@@ -23,7 +23,6 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            # Expecting the refresh token in the request data
             refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
