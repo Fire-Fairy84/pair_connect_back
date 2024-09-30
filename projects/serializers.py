@@ -24,7 +24,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         print(f"Image received in create method: {image}")  # Check if the image is received
         # Extract languages
         languages_data = validated_data.pop('languages')
-        # Create project without 'owner'
+        # Create project without 'owner' (self)
         project = Project.objects.create(owner=self.context['request'].user, **validated_data)
         # Set languages
         project.languages.set(languages_data)
