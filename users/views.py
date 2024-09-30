@@ -23,7 +23,6 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            # Expecting the refresh token in the request data
             refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()

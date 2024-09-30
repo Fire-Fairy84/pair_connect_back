@@ -18,12 +18,10 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         }
 
     def create(self, validated_data):
-        # Extract related fields
         stack = validated_data.pop('stack', None)
         level = validated_data.pop('level', None)
         prog_language = validated_data.pop('prog_language', None)
 
-        # Call Djoser's create method to create the user
         user = super().create(validated_data)
 
         # Assign ForeignKey fields
@@ -34,7 +32,6 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         if prog_language:
             user.prog_language = ProgLanguage.objects.get(id=prog_language)
 
-        # Save the user again with the related fields
         user.save()
 
         return user
@@ -43,7 +40,10 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 class CustomUserSerializer(UserSerializer):
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), allow_null=True)
     level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(), allow_null=True)
-    prog_language = serializers.PrimaryKeyRelatedField(queryset=ProgLanguage.objects.all(), allow_null=True)
+    prog_language = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=ProgLanguage.objects.all()
+    )
 
     class Meta(UserSerializer.Meta):
         model = CustomUser
@@ -55,7 +55,6 @@ class CustomUserSerializer(UserSerializer):
         read_only_fields = ['id', 'username', 'email']
 
     def validate(self, data):
-        # Check if 'username' or 'email' is being updated
         request = self.context.get('request', None)
         if request and request.method in ['PUT', 'PATCH']:
             if 'username' in request.data:

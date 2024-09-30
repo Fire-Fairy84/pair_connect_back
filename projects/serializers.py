@@ -5,28 +5,28 @@ from .models import Project, Session, InterestedParticipant
 
 class ProjectSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
-    # Return the `stack.name`, `level.name`, and `languages.name` for display while accepting their IDs for creation.
-    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),write_only=True)  # For writing (when creating/updating)
-    stack_name = serializers.CharField(source='stack.name', read_only=True)  # For reading (displaying stack name)
-    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)  # For writing (when creating/updating)
-    language_names = serializers.SlugRelatedField( many=True, read_only=True, slug_field='name', source='languages')  # For reading (displaying language names)
-    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),write_only=True)  # For writing (when creating/updating)
-    level_name = serializers.CharField(source='level.name', read_only=True)  # For reading (displaying level name)
-
+    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),
+                                               write_only=True)
+    stack_name = serializers.CharField(source='stack.name', read_only=True)
+    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(),
+                                                   write_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name',
+                                                  source='languages')
+    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),
+                                               write_only=True)
+    level_name = serializers.CharField(source='level.name', read_only=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level', 'level_name', 'image_url']
-        # Exclude 'owner' and 'active' from user input
+        fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
+                  'level_name', 'image_url']
 
     def create(self, validated_data):
         image = validated_data.get('image')
-        print(f"Image received in create method: {image}")  # Check if the image is received
-        # Extract languages
+        print(f"Image received in create method: {image}")
+
         languages_data = validated_data.pop('languages')
-        # Create project without 'owner' (self)
         project = Project.objects.create(owner=self.context['request'].user, **validated_data)
-        # Set languages
         project.languages.set(languages_data)
         return project
 
@@ -59,6 +59,12 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class SessionSerializer(serializers.ModelSerializer):
+    languages = serializers.SlugRelatedField(
+        many=True,
+        queryset=ProgLanguage.objects.all(),
+        slug_field='name'
+    )
+
     class Meta:
         model = Session
         fields = '__all__'

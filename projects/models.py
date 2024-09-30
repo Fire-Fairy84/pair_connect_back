@@ -3,7 +3,7 @@ from cloudinary.models import CloudinaryField
 from django.db import models
 from skills.models import Stack, ProgLanguage, Level
 from django.contrib.auth import get_user_model
-from .services import inherit_level_from_project, validate_and_assign_stack
+from .services import SessionService, DeveloperSuggestionService
 
 User = get_user_model()
 
@@ -20,7 +20,6 @@ class Project(models.Model):
     level = models.ForeignKey(Level, on_delete=models.CASCADE)
 
     def image_url(self):
-        # This ensures that you return the full URL to the image
         if self.image:
             return self.image.url
         return None
@@ -45,12 +44,15 @@ class Session(models.Model):
     participants = models.ManyToManyField(User, related_name='sessions_joined', blank=True)
 
     def save(self, *args, **kwargs):
-        inherit_level_from_project(self)
-
-        validate_and_assign_stack(self)
+        session_service = SessionService(self)
+        session_service.inherit_level_from_project()
+        session_service.validate_and_assign_stack()
 
         super(Session, self).save(*args, **kwargs)
 
+    def suggest_developers(self):
+        suggestion_service = DeveloperSuggestionService(self)
+        return suggestion_service.get_suggested_developers()
 
 
 class InterestedParticipant(models.Model):
