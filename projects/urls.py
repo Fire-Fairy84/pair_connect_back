@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProjectViewSet, SessionViewSet, InterestedParticipantViewSet
+from .views import ProjectViewSet, SessionViewSet, InterestedParticipantViewSet, ProjectCreateView
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet)
