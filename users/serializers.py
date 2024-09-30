@@ -74,3 +74,20 @@ class CustomUserSerializer(UserSerializer):
         if CustomUser.objects.exclude(pk=user.pk).filter(username=value).exists():
             raise serializers.ValidationError("A user with this username already exists.")
         return value
+
+
+class PublicDeveloperSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me'
+        )
+
+
+class PrivateDeveloperSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me',
+            'email', 'telephone', 'linkedin_link', 'github_link', 'discord_link'
+        )

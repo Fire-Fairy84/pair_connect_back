@@ -3,6 +3,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService
@@ -67,5 +68,35 @@ def invite_developer_to_session(request, session_id, developer_id):
         return Response({"error": "Developer not found"}, status=status.HTTP_404_NOT_FOUND)
     except ValidationError as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_developer_public_data(request, session_id, developer_id):
+    try:
+        developer_data_service = DeveloperDataService(session_id, developer_id)
+        developer_data = developer_data_service.get_developer_data()
+
+        return Response(developer_data, status=status.HTTP_200_OK)
+
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_developer_private_data(request, session_id, developer_id):
+    try:
+        developer_data_service = DeveloperDataService(session_id, developer_id)
+        developer_data = developer_data_service.get_developer_data(public=False)
+
+        return Response(developer_data, status=status.HTTP_200_OK)
+
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
