@@ -15,11 +15,12 @@ class ProjectSerializer(serializers.ModelSerializer):
     level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),
                                                write_only=True)
     level_name = serializers.CharField(source='level.name', read_only=True)
+    owner = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
-                  'level_name', 'image_url']
+                  'level_name', 'image_url', 'owner']
 
     def create(self, validated_data):
         image = validated_data.get('image')
