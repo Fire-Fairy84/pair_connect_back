@@ -1,9 +1,17 @@
 from rest_framework import serializers
 from skills.models import Stack, Level, ProgLanguage
+from users.models import CustomUser
 from .models import Project, Session, InterestedParticipant
 
 
+class OwnerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['username']
+
+
 class ProjectSerializer(serializers.ModelSerializer):
+    owner = OwnerSerializer(read_only=True)
     image_url = serializers.SerializerMethodField()
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),
                                                write_only=True)
@@ -15,7 +23,6 @@ class ProjectSerializer(serializers.ModelSerializer):
     level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),
                                                write_only=True)
     level_name = serializers.CharField(source='level.name', read_only=True)
-    owner = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Project
