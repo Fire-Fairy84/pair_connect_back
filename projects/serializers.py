@@ -59,15 +59,24 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class SessionSerializer(serializers.ModelSerializer):
-    languages = serializers.SlugRelatedField(
-        many=True,
-        queryset=ProgLanguage.objects.all(),
-        slug_field='name'
-    )
+    stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
+    stack_name = serializers.CharField(source='stack.name', read_only=True)
+
+    level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), write_only=True)
+    level_name = serializers.CharField(source='level.name', read_only=True)
+
+    language_ids = serializers.PrimaryKeyRelatedField(many=True, source='languages',
+                                                      queryset=ProgLanguage.objects.all(), write_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
 
     class Meta:
         model = Session
-        fields = '__all__'
+        fields = [
+            'id', 'description', 'schedule_date_time', 'duration',
+            'stack_id', 'stack_name',
+            'level_id', 'level_name',
+            'language_ids', 'language_names'
+        ]
 
     def validate_languages(self, value):
         project_id = self.initial_data.get('project')

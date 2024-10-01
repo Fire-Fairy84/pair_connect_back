@@ -1,6 +1,7 @@
 from rest_framework.exceptions import ValidationError
 from users.models import CustomUser
 from .utils import send_email
+from projects.models import Session
 
 
 class SessionService:
@@ -75,3 +76,27 @@ class InvitationService:
             send_email(subject, message, self.developer.email)
         except Exception as e:
             raise ValidationError(f"Failed to send invitation: {str(e)}")
+
+
+class SessionSuggestionService:
+
+    def __init__(self, user):
+        self.user = user
+
+    def get_suggested_sessions(self):
+        try:
+            user_stack = self.user.stack
+            user_level = self.user.level
+            user_languages = list(self.user.prog_language.all())
+
+            suggested_sessions = Session.objects.filter(stack=user_stack)
+
+            if user_languages:
+                suggested_sessions = suggested_sessions.filter(languages__in=user_languages).distinct()
+
+            if user_level:
+                suggested_sessions = suggested_sessions.filter(level=user_level)
+
+            return suggested_sessions
+        except Exception as e:
+            raise ValidationError(f"Error retrieving suggested sessions: {str(e)}")
