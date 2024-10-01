@@ -1,7 +1,7 @@
 from rest_framework.exceptions import ValidationError
 from users.models import CustomUser
 from .utils import send_email
-from projects.models import Session
+from projects.models import Session, Project
 
 
 class SessionService:
@@ -31,7 +31,6 @@ class SessionService:
 
 
 class DeveloperSuggestionService:
-
     def __init__(self, session):
         self.session = session
 
@@ -40,10 +39,7 @@ class DeveloperSuggestionService:
         session_level = self.session.level
         session_languages = list(self.session.languages.all())
 
-        if session_stack.name == 'Fullstack':
-            suggested_users = CustomUser.objects.filter(stack=session_stack)
-        else:
-            suggested_users = CustomUser.objects.filter(stack=session_stack)
+        suggested_users = CustomUser.objects.filter(stack=session_stack)
 
         if session_languages:
             suggested_users = suggested_users.filter(prog_language__in=session_languages).distinct()
@@ -79,7 +75,6 @@ class InvitationService:
 
 
 class SessionSuggestionService:
-
     def __init__(self, user):
         self.user = user
 
