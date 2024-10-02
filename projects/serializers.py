@@ -12,9 +12,8 @@ class OwnerSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     owner = OwnerSerializer(read_only=True)
+    owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)  # Only allow reading `owner_id`
     image_url = serializers.SerializerMethodField()
-    #owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)  # Only allow reading `owner_id`
-    # Return the `stack.name`, `level.name`, and `languages.name` for display while accepting their IDs for creation.
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),write_only=True)  # For writing (when creating/updating)
     stack_name = serializers.CharField(source='stack.name', read_only=True)  # For reading (displaying stack name)
     languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)  # For writing (when creating/updating)
@@ -26,9 +25,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
-                  'level_name', 'image_url', 'owner']
-        #fields = ['id', 'name', 'description', 'owner_id', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level', 'level_name', 'image_url']
-        # Exclude 'active' from user input
+                  'level_name', 'image_url', 'owner', 'owner_id']
 
     def create(self, validated_data):
         image = validated_data.get('image')
