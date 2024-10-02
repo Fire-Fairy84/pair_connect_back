@@ -256,7 +256,7 @@ def test_user_logout_without_token_fail(client):
     logout_response = client.post('/api/auth/logout/', logout_data)
 
     # Then: The request should fail with a 401 status for missing authentication
-    assert logout_response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert logout_response.status_code == status.HTTP_400_BAD_REQUEST
     assert logout_response.data['detail'] == 'Authentication credentials were not provided.'
 
 

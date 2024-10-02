@@ -3,7 +3,6 @@ from cloudinary.models import CloudinaryField
 from django.db import models
 from skills.models import Stack, ProgLanguage, Level
 from django.contrib.auth import get_user_model
-from .services import inherit_level_from_project, validate_and_assign_stack
 
 User = get_user_model()
 
@@ -20,10 +19,7 @@ class Project(models.Model):
     level = models.ForeignKey(Level, on_delete=models.CASCADE)
 
     def image_url(self):
-        # This ensures that you return the full URL to the image
-        if self.image:
-            return self.image.url
-        return None
+        return self.image.url if self.image else None
 
     def __str__(self):
         return self.name
@@ -44,13 +40,8 @@ class Session(models.Model):
     public = models.BooleanField(default=True)
     participants = models.ManyToManyField(User, related_name='sessions_joined', blank=True)
 
-    def save(self, *args, **kwargs):
-        inherit_level_from_project(self)
-
-        validate_and_assign_stack(self)
-
-        super(Session, self).save(*args, **kwargs)
-
+    def __str__(self):
+        return f"Session: {self.description}"
 
 
 class InterestedParticipant(models.Model):
@@ -60,3 +51,4 @@ class InterestedParticipant(models.Model):
 
     def __str__(self):
         return f"{self.user.username} is interested in session {self.session.id}"
+
