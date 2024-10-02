@@ -4,9 +4,21 @@ from users.models import CustomUser
 from .models import Project, Session, InterestedParticipant
 
 
+def get_owner_avatar_url(obj):
+    """Returns the avatar URL of the project's owner."""
+    if obj.owner and obj.owner.photo:
+        return obj.owner.photo.url  # assuming 'photo' is the avatar field in the owner model
+    return None  # or a default URL if applicable
+
+
+def get_image_url(obj):
+    return obj.image_url()
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.username', read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)
+    owner_avatar_url = serializers.CharField(source='owner.photo.url', read_only=True)
     image_url = serializers.SerializerMethodField()
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),
                                                write_only=True)
@@ -22,16 +34,13 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
-                  'level_name', 'image_url', 'owner_id', 'owner_name']
+                  'level_name', 'image_url', 'owner_id', 'owner_name', 'owner_avatar_url']
 
     def create(self, validated_data):
         languages_data = validated_data.pop('languages')
         project = Project.objects.create(owner=self.context['request'].user, **validated_data)
         project.languages.set(languages_data)
         return project
-
-    def get_image_url(self, obj):
-        return obj.image_url()
 
     def update(self, instance, validated_data):
         languages_data = validated_data.pop('languages', None)
