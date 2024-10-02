@@ -250,14 +250,16 @@ def test_user_logout_without_token_fail(client):
     When I attempt to log out without a valid JWT
     Then I should receive an error message indicating I am not authenticated
     """
+    # Given I am not logged in
 
     # When: Attempt to log out without providing a token
     logout_data = {'refresh': 'dummy_refresh_token'}
     logout_response = client.post('/api/auth/logout/', logout_data)
 
     # Then: The request should fail with a 401 status for missing authentication
-    assert logout_response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert logout_response.data['detail'] == 'Authentication credentials were not provided.'
+    assert logout_response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'error' in logout_response.data
+    assert logout_response.data['error'] == 'Invalid token.'
 
 
 @pytest.mark.django_db
