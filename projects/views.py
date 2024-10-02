@@ -30,6 +30,14 @@ class SessionViewSet(viewsets.ModelViewSet):
     serializer_class = SessionSerializer
 
 
+class SessionsByProjectView(generics.ListAPIView):
+    serializer_class = SessionSerializer
+
+    def get_queryset(self):
+        project_id = self.kwargs['project_id']
+        return Session.objects.filter(project__id=project_id)
+
+
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
     serializer_class = InterestedParticipantSerializer
