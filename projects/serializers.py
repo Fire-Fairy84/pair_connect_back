@@ -12,22 +12,20 @@ class OwnerSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     owner = OwnerSerializer(read_only=True)
+    owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)  # Only allow reading `owner_id`
     image_url = serializers.SerializerMethodField()
-    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),
-                                               write_only=True)
-    stack_name = serializers.CharField(source='stack.name', read_only=True)
-    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(),
-                                                   write_only=True)
-    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name',
-                                                  source='languages')
-    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),
-                                               write_only=True)
-    level_name = serializers.CharField(source='level.name', read_only=True)
+    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),write_only=True)  # For writing (when creating/updating)
+    stack_name = serializers.CharField(source='stack.name', read_only=True)  # For reading (displaying stack name)
+    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)  # For writing (when creating/updating)
+    language_names = serializers.SlugRelatedField( many=True, read_only=True, slug_field='name', source='languages')  # For reading (displaying language names)
+    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),write_only=True)  # For writing (when creating/updating)
+    level_name = serializers.CharField(source='level.name', read_only=True)  # For reading (displaying level name)
+
 
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
-                  'level_name', 'image_url', 'owner']
+                  'level_name', 'image_url', 'owner', 'owner_id']
 
     def create(self, validated_data):
         image = validated_data.get('image')
