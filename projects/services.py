@@ -1,6 +1,6 @@
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from users.models import CustomUser
-from .utils import send_email
+from .emails import send_email
 from projects.models import Session, Project
 
 
