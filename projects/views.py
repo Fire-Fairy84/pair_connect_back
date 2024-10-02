@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
-from .services import DeveloperSuggestionService, InvitationService
+from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
 
@@ -20,7 +20,6 @@ class ProjectCreateView(generics.CreateAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -98,5 +97,23 @@ def get_developer_private_data(request, session_id, developer_id):
     except ValidationError as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_suggested_sessions_for_user(request):
+    try:
+        user = request.user
+
+        session_suggestion_service = SessionSuggestionService(user)
+        suggested_sessions = session_suggestion_service.get_suggested_sessions()
+
+        serializer = SessionSerializer(suggested_sessions, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
