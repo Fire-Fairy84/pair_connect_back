@@ -84,6 +84,18 @@ class CustomUserSerializer(UserSerializer):
             instance.prog_language.set(prog_languages)
             
         return instance
+    
+    def to_representation(self, instance):
+        """Override to adjust photo URL format."""
+        representation = super().to_representation(instance)
+        if instance.photo:
+            base_url = 'https://res.cloudinary.com/dwzqcmaod/image/upload/'
+            photo_url = str(instance.photo)
+            if not photo_url.startswith('http'):
+                representation['photo'] = f"{base_url}{photo_url}"
+            else:
+                representation['photo'] = photo_url
+        return representation
 
 
 class PublicDeveloperSerializer(serializers.ModelSerializer):
@@ -92,9 +104,22 @@ class PublicDeveloperSerializer(serializers.ModelSerializer):
         fields = (
             'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me'
         )
+        
+    def to_representation(self, instance):
+        """Override to adjust photo URL format."""
+        representation = super().to_representation(instance)
+        if instance.photo:
+            base_url = 'https://res.cloudinary.com/dwzqcmaod/image/upload/'
+            photo_url = str(instance.photo)
+            if not photo_url.startswith('http'):
+                representation['photo'] = f"{base_url}{photo_url}"
+            else:
+                representation['photo'] = photo_url
+        return representation
 
 
 class PrivateDeveloperSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
     class Meta:
         model = CustomUser
         fields = (
@@ -102,3 +127,15 @@ class PrivateDeveloperSerializer(serializers.ModelSerializer):
             'email', 'telephone', 'linkedin_link', 'github_link', 'discord_link'
         )
     
+    
+        def to_representation(self, instance):
+            """Override to adjust photo URL format."""
+            representation = super().to_representation(instance)
+            if instance.photo:
+                base_url = 'https://res.cloudinary.com/dwzqcmaod/image/upload/'
+                photo_url = str(instance.photo)
+                if not photo_url.startswith('http'):
+                    representation['photo'] = f"{base_url}{photo_url}"
+                else:
+                    representation['photo'] = photo_url
+            return representation
