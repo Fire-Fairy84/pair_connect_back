@@ -7,7 +7,7 @@ from .models import Project, Session, InterestedParticipant
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.username', read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)
-    owner_avatar_url = serializers.CharField(source='owner.photo.url', read_only=True)
+    owner_avatar_url = serializers.CharField(source='owner.photo', read_only=True)
     image_url = serializers.CharField(source='image.url', read_only=True)  # Ya no es SerializerMethodField
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
