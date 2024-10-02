@@ -4,37 +4,23 @@ from users.models import CustomUser
 from .models import Project, Session, InterestedParticipant
 
 
-def get_owner_avatar_url(obj):
-    """Returns the avatar URL of the project's owner."""
-    if obj.owner and obj.owner.photo:
-        return obj.owner.photo.url  # assuming 'photo' is the avatar field in the owner model
-    return None  # or a default URL if applicable
-
-
-def get_image_url(obj):
-    return obj.image_url()
-
-
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.username', read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)
     owner_avatar_url = serializers.CharField(source='owner.photo.url', read_only=True)
-    image_url = serializers.SerializerMethodField()
-    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),
-                                               write_only=True)
+    image_url = serializers.CharField(source='image.url', read_only=True)  # Ya no es SerializerMethodField
+    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
-    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(),
-                                                   write_only=True)
-    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name',
-                                                  source='languages')
-    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),
-                                               write_only=True)
+    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
+    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(), write_only=True)
     level_name = serializers.CharField(source='level.name', read_only=True)
 
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
                   'level_name', 'image_url', 'owner_id', 'owner_name', 'owner_avatar_url']
+
 
     def create(self, validated_data):
         languages_data = validated_data.pop('languages')
