@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
-from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService
+from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
 
@@ -28,6 +28,13 @@ class ProjectCreateView(generics.CreateAPIView):
 class SessionViewSet(viewsets.ModelViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
+
+    def perform_create(self, serializer):
+        project_id = serializer.validated_data['project'].id
+        session_data = serializer.validated_data
+
+        SessionCreationService.handle_create_session(self.request.user, project_id, session_data)
+        serializer.save(host=self.request.user)
 
 
 class SessionsByProjectView(generics.ListAPIView):
