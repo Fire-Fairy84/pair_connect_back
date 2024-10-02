@@ -101,3 +101,4 @@ class PrivateDeveloperSerializer(serializers.ModelSerializer):
             'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me',
             'email', 'telephone', 'linkedin_link', 'github_link', 'discord_link'
         )
+    

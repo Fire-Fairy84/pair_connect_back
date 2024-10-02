@@ -31,4 +31,4 @@ class LogoutView(APIView):
         except KeyError:
             return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
         except TokenError as e:
-            return Response({"error": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
