@@ -38,6 +38,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
+    photo_url = serializers.CharField(source='image.url', read_only=True)
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), allow_null=True)
     level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(), allow_null=True)
     prog_language = serializers.PrimaryKeyRelatedField(
@@ -50,7 +51,7 @@ class CustomUserSerializer(UserSerializer):
         fields = (
             'id', 'username', 'email', 'name', 'photo', 'about_me',
             'telephone', 'linkedin_link', 'github_link', 'discord_link',
-            'stack', 'level', 'prog_language'
+            'stack', 'level', 'prog_language', 'photo_url',
         )
         read_only_fields = ['id', 'username', 'email']
 
