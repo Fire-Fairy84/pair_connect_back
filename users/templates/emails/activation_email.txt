@@ -1,0 +1,12 @@
+¡Hola, {{user.username }}!
+
+Gracias por unirte a Pair Connect.
+
+Haz clic en el enlace de abajo para activar tu cuenta y empezar a conectar:
+
+{{ activation_url }}
+
+Si no te registraste, no pasa nada, puedes ignorar este correo.
+
+¡Un abrazo!
+El equipo de Pair Connect

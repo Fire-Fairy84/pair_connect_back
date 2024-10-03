@@ -38,6 +38,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
+    photo_url = serializers.CharField(source='image.url', read_only=True)
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), allow_null=True)
     level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(), allow_null=True)
     prog_language = serializers.PrimaryKeyRelatedField(
@@ -53,7 +54,7 @@ class CustomUserSerializer(UserSerializer):
         fields = (
             'id', 'username', 'email', 'name', 'photo', 'about_me',
             'telephone', 'linkedin_link', 'github_link', 'discord_link',
-            'stack', 'level', 'prog_language', 'stack_name', 'level_name', 'language_names'
+            'stack', 'level', 'prog_language', 'photo_url',
         )
         read_only_fields = ['id', 'username', 'email']
 
@@ -77,17 +78,17 @@ class CustomUserSerializer(UserSerializer):
         if CustomUser.objects.exclude(pk=user.pk).filter(username=value).exists():
             raise serializers.ValidationError("A user with this username already exists.")
         return value
-    
+
     def update(self, instance, validated_data):
         prog_languages = validated_data.pop('prog_language', None)
-        
+
         instance = super().update(instance, validated_data)
 
         if prog_languages:
             instance.prog_language.set(prog_languages)
-            
+
         return instance
-    
+
     def to_representation(self, instance):
         """Override to adjust photo URL format."""
         representation = super().to_representation(instance)
@@ -110,7 +111,7 @@ class PublicDeveloperSerializer(serializers.ModelSerializer):
         fields = (
             'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me', 'stack_name', 'level_name', 'language_names'
         )
-        
+
     def to_representation(self, instance):
         """Override to adjust photo URL format."""
         representation = super().to_representation(instance)
@@ -125,17 +126,15 @@ class PublicDeveloperSerializer(serializers.ModelSerializer):
 
 
 class PrivateDeveloperSerializer(serializers.ModelSerializer):
-    stack_name = serializers.CharField(source='stack.name', read_only=True)
-    level_name = serializers.CharField(source='level.name', read_only=True)
-    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='prog_language')
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = (
             'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me',
             'email', 'telephone', 'linkedin_link', 'github_link', 'discord_link', 'stack_name', 'level_name', 'language_names',
         )
-    
-    
+
         def to_representation(self, instance):
             """Override to adjust photo URL format."""
             representation = super().to_representation(instance)
