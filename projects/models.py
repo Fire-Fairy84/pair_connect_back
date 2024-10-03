@@ -28,7 +28,6 @@ class Project(models.Model):
 class Session(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='sessions')
     host = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True)
-    name = models.CharField(max_length=255, default="Default Session Name")
     description = models.TextField()
     schedule_date_time = models.DateTimeField()
     duration = models.DurationField(default=timedelta(hours=2))
@@ -42,7 +41,7 @@ class Session(models.Model):
     participants = models.ManyToManyField(User, related_name='sessions_joined', blank=True)
 
     def __str__(self):
-        return f"Session: {self.name} - {self.description[:50]}"
+        return f"Session: {self.description}"
 
 
 class InterestedParticipant(models.Model):
