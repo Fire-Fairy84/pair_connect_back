@@ -21,7 +21,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
                   'level_name', 'image_url', 'owner_id', 'owner_name', 'owner_avatar_url']
 
-
     def create(self, validated_data):
         languages_data = validated_data.pop('languages')
         project = Project.objects.create(owner=self.context['request'].user, **validated_data)
