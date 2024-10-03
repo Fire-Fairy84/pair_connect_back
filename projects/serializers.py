@@ -56,6 +56,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 class SessionSerializer(serializers.ModelSerializer):
     owner_id = serializers.PrimaryKeyRelatedField(source='host', read_only=True)
     owner_name = serializers.CharField(source='host.username', read_only=True)
+    owner_photo = serializers.CharField(source='host.photo', read_only=True)
     stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
     level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), write_only=True)
@@ -73,7 +74,7 @@ class SessionSerializer(serializers.ModelSerializer):
             'stack_id', 'stack_name',
             'level_id', 'level_name',
             'language_ids', 'language_names',
-            'project_id', 'owner_id', 'owner_name'
+            'project_id', 'owner_id', 'owner_name', 'owner_photo'
         ]
 
     def validate_languages(self, value):
