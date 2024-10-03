@@ -90,8 +90,7 @@ class SessionSuggestionService:
             user_stack = self.user.stack
             user_level = self.user.level
             user_languages = list(self.user.prog_language.all())
-
-            suggested_sessions = Session.objects.filter(stack=user_stack)
+            suggested_sessions = Session.objects.filter(stack=user_stack).exclude(user=self.user)
 
             if user_languages:
                 suggested_sessions = suggested_sessions.filter(languages__in=user_languages).distinct()
@@ -101,7 +100,7 @@ class SessionSuggestionService:
 
             return suggested_sessions
         except Exception as e:
-            raise ValidationError(f"Error retrieving suggested sessions: {str(e)}")
+            raise Exception(f"Error retrieving suggested sessions: {str(e)}")
 
 
 class SessionCreationService:
@@ -112,6 +111,10 @@ class SessionCreationService:
 
             if project.owner != user:
                 raise PermissionDenied("Only the owner of the project can create sessions.")
+
+            session_name = session_data.get('name')
+            if not session_name:
+                raise ValidationError("The session name is required.")
 
             session = Session.objects.create(
                 project=project,

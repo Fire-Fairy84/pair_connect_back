@@ -1,7 +1,8 @@
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
@@ -119,13 +120,12 @@ def get_developer_private_data(request, session_id, developer_id):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_suggested_sessions_for_user(request):
     try:
         user = request.user
-
         session_suggestion_service = SessionSuggestionService(user)
         suggested_sessions = session_suggestion_service.get_suggested_sessions()
-
         serializer = SessionSerializer(suggested_sessions, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
