@@ -112,6 +112,10 @@ class SessionCreationService:
             if project.owner != user:
                 raise PermissionDenied("Only the owner of the project can create sessions.")
 
+            session_name = session_data.get('name')
+            if not session_name:
+                raise ValidationError("The session name is required.")
+
             session = Session.objects.create(
                 project=project,
                 host=user,
