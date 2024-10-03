@@ -9,6 +9,7 @@ from .serializers import ProjectSerializer, SessionSerializer, InterestedPartici
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -26,6 +27,7 @@ class ProjectCreateView(generics.CreateAPIView):
 
 
 class SessionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
 

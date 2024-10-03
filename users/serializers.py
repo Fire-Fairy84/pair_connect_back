@@ -44,13 +44,16 @@ class CustomUserSerializer(UserSerializer):
         many=True,
         queryset=ProgLanguage.objects.all()
     )
+    stack_name = serializers.CharField(source='stack.name', read_only=True)
+    level_name = serializers.CharField(source='level.name', read_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='prog_language')
 
     class Meta(UserSerializer.Meta):
         model = CustomUser
         fields = (
             'id', 'username', 'email', 'name', 'photo', 'about_me',
             'telephone', 'linkedin_link', 'github_link', 'discord_link',
-            'stack', 'level', 'prog_language'
+            'stack', 'level', 'prog_language', 'stack_name', 'level_name', 'language_names'
         )
         read_only_fields = ['id', 'username', 'email']
 
@@ -99,10 +102,13 @@ class CustomUserSerializer(UserSerializer):
 
 
 class PublicDeveloperSerializer(serializers.ModelSerializer):
+    stack_name = serializers.CharField(source='stack.name', read_only=True)
+    level_name = serializers.CharField(source='level.name', read_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='prog_language')
     class Meta:
         model = CustomUser
         fields = (
-            'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me'
+            'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me', 'stack_name', 'level_name', 'language_names'
         )
         
     def to_representation(self, instance):
@@ -119,12 +125,14 @@ class PublicDeveloperSerializer(serializers.ModelSerializer):
 
 
 class PrivateDeveloperSerializer(serializers.ModelSerializer):
-    photo_url = serializers.SerializerMethodField()
+    stack_name = serializers.CharField(source='stack.name', read_only=True)
+    level_name = serializers.CharField(source='level.name', read_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='prog_language')
     class Meta:
         model = CustomUser
         fields = (
             'name', 'username', 'photo', 'stack', 'prog_language', 'level', 'about_me',
-            'email', 'telephone', 'linkedin_link', 'github_link', 'discord_link'
+            'email', 'telephone', 'linkedin_link', 'github_link', 'discord_link', 'stack_name', 'level_name', 'language_names',
         )
     
     
