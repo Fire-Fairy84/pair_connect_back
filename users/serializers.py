@@ -54,7 +54,7 @@ class CustomUserSerializer(UserSerializer):
         fields = (
             'id', 'username', 'email', 'name', 'photo', 'about_me',
             'telephone', 'linkedin_link', 'github_link', 'discord_link',
-            'stack', 'level', 'prog_language', 'photo_url',
+            'stack', 'stack_name', 'level', 'prog_language', 'photo_url', 'language_names', 'level_name'
         )
         read_only_fields = ['id', 'username', 'email']
 
