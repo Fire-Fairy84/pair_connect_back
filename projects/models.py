@@ -11,7 +11,7 @@ class Project(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
-    image = CloudinaryField('image', null=True, blank=True)
+    image = CloudinaryField('image', null=True, blank=True, default="https://res-console.cloudinary.com/dwzqcmaod/thumbnails/v1/image/upload/v1728056127/Y29kZV9hZGtnb3k=/preview")
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=False)
     stack = models.ForeignKey(Stack, on_delete=models.CASCADE)

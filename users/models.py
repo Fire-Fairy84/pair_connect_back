@@ -36,7 +36,7 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractUser):
     name = models.CharField(max_length=255, null=False, blank=False)
     email = models.EmailField(unique=True)
-    photo = CloudinaryField('image', null=True, blank=True, default='https://res.cloudinary.com/dwzqcmaod/image/upload/v1727428844/default_avatar_pew52f.jpg')
+    photo = CloudinaryField('image', null=True, blank=True, default='https://res-console.cloudinary.com/dwzqcmaod/thumbnails/v1/image/upload/v1728056035/YXZhdGFyLXJlbW92ZWJnLXByZXZpZXdfb3J5Ympz/preview')
     stack = models.ForeignKey(Stack, on_delete=models.SET_NULL, null=True, blank=True)
     prog_language = models.ManyToManyField(ProgLanguage, blank=True)
     level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True, blank=True)
