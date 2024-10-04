@@ -63,8 +63,6 @@ class SessionSerializer(serializers.ModelSerializer):
                                                       queryset=ProgLanguage.objects.all(), write_only=True)
     language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
     project_id = serializers.IntegerField(source='project.id', read_only=True)
-    host_avatar_url = serializers.CharField(source='host.photo', read_only=True)
-    image_url = serializers.CharField(source='image.url', read_only=True) 
 
     class Meta:
         model = Session
@@ -73,8 +71,7 @@ class SessionSerializer(serializers.ModelSerializer):
             'stack_id', 'stack_name',
             'level_id', 'level_name',
             'language_ids', 'language_names',
-            'project_id', 'owner_id', 'owner_name',
-            'host_avatar_url', 'image_url'
+            'project_id', 'owner_id', 'owner_name'
         ]
 
     def validate_languages(self, value):
