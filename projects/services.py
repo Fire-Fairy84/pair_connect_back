@@ -90,7 +90,7 @@ class SessionSuggestionService:
             user_stack = self.user.stack
             user_level = self.user.level
             user_languages = list(self.user.prog_language.all())
-
+            suggested_sessions = Session.objects.filter(stack=user_stack)
             if user_stack == 'Fullstack':
                 suggested_sessions = Session.objects.all()
             elif user_stack == 'Frontend':
