@@ -6,14 +6,16 @@ from rest_framework.response import Response
 from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
-from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService
+from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class ProjectCreateView(generics.CreateAPIView):
@@ -26,8 +28,25 @@ class ProjectCreateView(generics.CreateAPIView):
 
 
 class SessionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
+
+    def perform_create(self, serializer):
+        project_id = serializer.validated_data['project'].id
+        session_data = serializer.validated_data
+
+        SessionCreationService.handle_create_session(self.request.user, project_id, session_data)
+        serializer.save(host=self.request.user)
+
+
+class SessionsByProjectView(generics.ListAPIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = SessionSerializer
+
+    def get_queryset(self):
+        project_id = self.kwargs['project_id']
+        return Session.objects.filter(project__id=project_id)
 
 
 class InterestedParticipantViewSet(viewsets.ModelViewSet):

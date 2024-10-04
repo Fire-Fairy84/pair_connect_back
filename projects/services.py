@@ -1,6 +1,6 @@
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from users.models import CustomUser
-from .utils import send_email
+from .email_service import send_email
 from projects.models import Session, Project
 
 
@@ -35,19 +35,26 @@ class DeveloperSuggestionService:
         self.session = session
 
     def get_suggested_developers(self):
-        session_stack = self.session.stack
-        session_level = self.session.level
-        session_languages = list(self.session.languages.all())
+        try:
+            session_stack = self.session.stack
+            session_level = self.session.level
+            session_languages = list(self.session.languages.all())
+            suggested_users = CustomUser.objects.filter(stack=session_stack)
 
-        suggested_users = CustomUser.objects.filter(stack=session_stack)
+            if session_languages:
+                suggested_users = suggested_users.filter(prog_language__in=session_languages).distinct()
 
-        if session_languages:
-            suggested_users = suggested_users.filter(prog_language__in=session_languages).distinct()
+            if session_level:
+                suggested_users = suggested_users.filter(level=session_level)
 
-        if session_level:
-            suggested_users = suggested_users.filter(level=session_level)
+            return suggested_users
 
-        return suggested_users
+        except CustomUser.DoesNotExist:
+            raise ValidationError("No developers found matching the criteria.")
+        except ValidationError as e:
+            raise ValidationError(f"Validation error: {str(e)}")
+        except Exception as e:
+            raise ValidationError(f"An unexpected error occurred: {str(e)}")
 
 
 class InvitationService:
@@ -95,3 +102,25 @@ class SessionSuggestionService:
             return suggested_sessions
         except Exception as e:
             raise ValidationError(f"Error retrieving suggested sessions: {str(e)}")
+
+
+class SessionCreationService:
+    @staticmethod
+    def handle_create_session(user, project_id, session_data):
+        try:
+            project = Project.objects.get(id=project_id)
+
+            if project.owner != user:
+                raise PermissionDenied("Only the owner of the project can create sessions.")
+
+            session = Session.objects.create(
+                project=project,
+                host=user,
+                **session_data
+            )
+            return session
+
+        except Project.DoesNotExist:
+            raise PermissionDenied("Project does not exist.")
+        except Exception as e:
+            raise PermissionDenied(f"An error occurred: {str(e)}")

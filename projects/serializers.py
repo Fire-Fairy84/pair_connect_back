@@ -4,40 +4,28 @@ from users.models import CustomUser
 from .models import Project, Session, InterestedParticipant
 
 
-class OwnerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ['username']
-
-
 class ProjectSerializer(serializers.ModelSerializer):
-    owner = OwnerSerializer(read_only=True)
-    owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)  # Only allow reading `owner_id`
-    image_url = serializers.SerializerMethodField()
-    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(),write_only=True)  # For writing (when creating/updating)
-    stack_name = serializers.CharField(source='stack.name', read_only=True)  # For reading (displaying stack name)
-    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)  # For writing (when creating/updating)
-    language_names = serializers.SlugRelatedField( many=True, read_only=True, slug_field='name', source='languages')  # For reading (displaying language names)
-    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(),write_only=True)  # For writing (when creating/updating)
-    level_name = serializers.CharField(source='level.name', read_only=True)  # For reading (displaying level name)
-
+    owner_name = serializers.CharField(source='owner.username', read_only=True)
+    owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)
+    owner_avatar_url = serializers.CharField(source='owner.photo', read_only=True)
+    image_url = serializers.CharField(source='image.url', read_only=True)  # Ya no es SerializerMethodField
+    stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), write_only=True)
+    stack_name = serializers.CharField(source='stack.name', read_only=True)
+    languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
+    level = serializers.PrimaryKeyRelatedField(queryset=Level.objects.all(), write_only=True)
+    level_name = serializers.CharField(source='level.name', read_only=True)
 
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'image', 'stack', 'stack_name', 'languages', 'language_names', 'level',
-                  'level_name', 'image_url', 'owner', 'owner_id']
+                  'level_name', 'image_url', 'owner_id', 'owner_name', 'owner_avatar_url']
 
     def create(self, validated_data):
-        image = validated_data.get('image')
-        print(f"Image received in create method: {image}")
-
         languages_data = validated_data.pop('languages')
         project = Project.objects.create(owner=self.context['request'].user, **validated_data)
         project.languages.set(languages_data)
         return project
-
-    def get_image_url(self, obj):
-        return obj.image_url()
 
     def update(self, instance, validated_data):
         languages_data = validated_data.pop('languages', None)
@@ -65,17 +53,18 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class SessionSerializer(serializers.ModelSerializer):
+    owner_id = serializers.PrimaryKeyRelatedField(source='host', read_only=True)
+    owner_name = serializers.CharField(source='host.username', read_only=True)
     stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
-
     level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), write_only=True)
     level_name = serializers.CharField(source='level.name', read_only=True)
-
     language_ids = serializers.PrimaryKeyRelatedField(many=True, source='languages',
                                                       queryset=ProgLanguage.objects.all(), write_only=True)
     language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
-
     project_id = serializers.IntegerField(source='project.id', read_only=True)
+    host_avatar_url = serializers.CharField(source='host.photo', read_only=True)
+    image_url = serializers.CharField(source='image.url', read_only=True) 
 
     class Meta:
         model = Session
@@ -84,7 +73,8 @@ class SessionSerializer(serializers.ModelSerializer):
             'stack_id', 'stack_name',
             'level_id', 'level_name',
             'language_ids', 'language_names',
-            'project_id'
+            'project_id', 'owner_id', 'owner_name',
+            'host_avatar_url', 'image_url'
         ]
 
     def validate_languages(self, value):
@@ -95,7 +85,6 @@ class SessionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Project with id {project_id} does not exist.")
 
         project_languages_ids = set(project.languages.values_list('id', flat=True))
-
         for language in value:
             if language.id not in project_languages_ids:
                 raise serializers.ValidationError(f"Language {language.name} is not part of the project.")
