@@ -121,6 +121,7 @@ class SessionCreationService:
             session = Session.objects.create(
                 project=project,
                 host=user,
+                level=project.level,
                 **session_data
             )
             return session

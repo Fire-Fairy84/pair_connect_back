@@ -63,6 +63,7 @@ class SessionSerializer(serializers.ModelSerializer):
                                                       queryset=ProgLanguage.objects.all(), write_only=True)
     language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
     project_id = serializers.IntegerField(source='project.id', read_only=True)
+    description = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Session

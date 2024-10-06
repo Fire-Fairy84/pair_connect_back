@@ -28,7 +28,7 @@ class Project(models.Model):
 class Session(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='sessions')
     host = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     schedule_date_time = models.DateTimeField()
     duration = models.DurationField(default=timedelta(hours=2))
     stack = models.ForeignKey(Stack, on_delete=models.SET_NULL, null=True, blank=True)
