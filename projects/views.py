@@ -60,19 +60,12 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
         try:
             session_id = self.request.data.get('session')
             if not session_id:
-                return Response(
-                    {"error": "Session ID is required."}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                raise ValidationError("Session ID is required.")
 
             session = get_object_or_404(Session, id=session_id)
 
             if InterestedParticipant.objects.filter(user=self.request.user, session=session).exists():
-                print("User is already interested")
-                return Response(
-                    {"error": "You are already interested in this session."}, 
-                    status=status.HTTP_409_CONFLICT
-                )
+                raise ValidationError("You are already interested in this session.")
 
             interested_participant = serializer.save(user=self.request.user)
 
@@ -84,6 +77,12 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED
             )
 
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_409_CONFLICT
+            )
+
         except Exception as e:
             return Response(
                 {"error": str(e)}, 
@@ -91,6 +90,22 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
             )
     def get_queryset(self):
         return super().get_queryset().filter(user=self.request.user)
+
+
+
+class CheckUserInterestView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, session_id):
+        try:
+            session = get_object_or_404(Session, id=session_id)
+
+            is_interested = InterestedParticipant.objects.filter(user=request.user, session=session).exists()
+
+            return Response({"is_interested": is_interested}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
