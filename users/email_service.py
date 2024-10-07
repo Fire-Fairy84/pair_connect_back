@@ -10,7 +10,7 @@ class ActivationEmail(BaseActivationEmail):
     def get_context_data(self):
         context = super().get_context_data()
         context['user'] = self.context.get('user')
-        frontend_url = "http://localhost:3000"
+        frontend_url = "http://localhost:5173"
         context['activation_url'] = f"{frontend_url}/activate/{context.get('uid')}/{context.get('token')}"
         return context
 
