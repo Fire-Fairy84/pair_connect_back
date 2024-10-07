@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (ProjectViewSet, SessionViewSet, InterestedParticipantViewSet, get_suggested_developers,
                     get_developer_public_data, get_developer_private_data, get_suggested_sessions_for_user,
-                    SessionsByProjectView)
+                    SessionsByProjectView, invite_developer_to_session)
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet)
@@ -18,5 +18,6 @@ urlpatterns = [
          name='developer_private_data'),
     path('users/suggested-sessions/', get_suggested_sessions_for_user, name='suggested_sessions'),
     path('projects/<int:project_id>/sessions/', SessionsByProjectView.as_view(), name='sessions_by_project'),
+path('sessions/<int:session_id>/developers/<int:developer_id>/invite/', invite_developer_to_session, name='invite_developer'),
     path('', include(router.urls)),
 ]
