@@ -1,6 +1,6 @@
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from users.models import CustomUser
-from .email_service import send_email
+from .email_service import EmailService
 from projects.models import Session, Project
 
 
@@ -64,19 +64,7 @@ class InvitationService:
 
     def send_invitation(self):
         try:
-            project_owner_name = self.session.project.owner.name
-            subject = f"¡{project_owner_name} te invita a una sesión de programación!"
-            message = (
-                f"¡Hola {self.developer.name}!\n\n"
-                f"{project_owner_name} te ha invitado a unirte a la sesión '{self.session.description}' que se "
-                f"llevará a cabo el {self.session.schedule_date_time}."
-                f"¡Va a estar genial, vamos a programar y aprender juntos!\n\n"
-                f"Puedes ver toda la info de la sesión a través de este enlace: {self.session.session_link}.\n\n"
-                f"Nos vemos ahí y no olvides traer tus ganas de aprender y programar, ¡será divertido!\n\n"
-                f"Un saludo,\n"
-                f"El equipo de Pair Connect"
-            )
-            send_email(subject, message, self.developer.email)
+            EmailService.send_invite_email(self.session, self.developer)
         except Exception as e:
             raise ValidationError(f"Failed to send invitation: {str(e)}")
 

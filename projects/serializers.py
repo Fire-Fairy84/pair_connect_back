@@ -8,7 +8,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.username', read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)
     owner_avatar_url = serializers.CharField(source='owner.photo', read_only=True)
-    image_url = serializers.CharField(source='image.url', read_only=True)  # Ya no es SerializerMethodField
+    image_url = serializers.CharField(source='image.url', read_only=True)
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
     languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)
@@ -63,11 +63,12 @@ class SessionSerializer(serializers.ModelSerializer):
                                                       queryset=ProgLanguage.objects.all(), write_only=True)
     language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
     project_id = serializers.IntegerField(source='project.id', read_only=True)
+    name = serializers.CharField(max_length=255)
 
     class Meta:
         model = Session
         fields = [
-            'id', 'description', 'schedule_date_time', 'duration',
+            'id', 'name', 'description', 'schedule_date_time', 'duration',
             'stack_id', 'stack_name',
             'level_id', 'level_name',
             'language_ids', 'language_names',
