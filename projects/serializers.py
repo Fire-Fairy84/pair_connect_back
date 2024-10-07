@@ -92,4 +92,4 @@ class SessionSerializer(serializers.ModelSerializer):
 class InterestedParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = InterestedParticipant
-        fields = '__all__'
+        fields = ['session', 'date_created_interested'] 

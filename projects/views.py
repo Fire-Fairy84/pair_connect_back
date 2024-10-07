@@ -1,4 +1,4 @@
-from rest_framework import viewsets, generics, permissions, status
+from rest_framework import viewsets, generics, permissions, status, serializers
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
@@ -10,6 +10,8 @@ from .services import DeveloperSuggestionService, InvitationService, SessionSugg
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -51,6 +53,43 @@ class SessionsByProjectView(generics.ListAPIView):
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
     serializer_class = InterestedParticipantSerializer
+    permission_classes = [IsAuthenticated] 
+
+    def perform_create(self, serializer):
+        try:
+            session_id = self.request.data.get('session')
+            if not session_id:
+                return Response(
+                    {"error": "Session ID is required."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            session = get_object_or_404(Session, id=session_id)
+
+            if InterestedParticipant.objects.filter(user=self.request.user, session=session).exists():
+                print("User is already interested")
+                return Response(
+                    {"error": "You are already interested in this session."}, 
+                    status=status.HTTP_409_CONFLICT
+                )
+
+            interested_participant = serializer.save(user=self.request.user)
+
+            return Response(
+                {
+                    "message": "You have successfully expressed interest in this session.",
+                    "participant": InterestedParticipantSerializer(interested_participant).data
+                }, 
+                status=status.HTTP_201_CREATED
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
 
 
 @api_view(['GET'])
