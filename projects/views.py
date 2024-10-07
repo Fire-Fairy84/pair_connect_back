@@ -1,6 +1,4 @@
 from rest_framework import viewsets, generics, permissions, status, serializers
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework import viewsets, generics, permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -82,8 +80,7 @@ def invite_developer_to_session(request, session_id, developer_id):
     try:
         session = Session.objects.get(id=session_id)
         developer = CustomUser.objects.get(id=developer_id)
-        invitation_service = InvitationService(session, developer)
-        invitation_service.send_invitation()
+        EmailService.send_invite_email(session, developer)
 
         return Response({"message": "Invitation sent successfully"}, status=status.HTTP_200_OK)
 
