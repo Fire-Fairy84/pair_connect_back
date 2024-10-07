@@ -57,7 +57,7 @@ class SessionSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='host.username', read_only=True)
     stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
-    level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), write_only=True)
+    level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), required=False, allow_null=True, write_only=True)
     level_name = serializers.CharField(source='level.name', read_only=True)
     language_ids = serializers.PrimaryKeyRelatedField(many=True, source='languages',
                                                       queryset=ProgLanguage.objects.all(), write_only=True)
