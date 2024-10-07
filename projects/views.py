@@ -1,4 +1,4 @@
-from rest_framework import viewsets, generics, permissions, status
+from rest_framework import viewsets, generics, permissions, status, serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -33,11 +33,17 @@ class SessionViewSet(viewsets.ModelViewSet):
     serializer_class = SessionSerializer
 
     def perform_create(self, serializer):
-        project_id = serializer.validated_data['project'].id
+        project_id = self.request.data.get('project')
+        if not project_id:
+            raise serializers.ValidationError("Project ID is required to create a session.")
+
+        if not Project.objects.filter(id=project_id).exists():
+            raise serializers.ValidationError("Project does not exist.")
+
         session_data = serializer.validated_data
 
-        SessionCreationService.handle_create_session(self.request.user, project_id, session_data)
-        serializer.save(host=self.request.user)
+        session = SessionCreationService.handle_create_session(self.request.user, project_id, session_data)
+        serializer.instance = session
 
 
 class SessionsByProjectView(generics.ListAPIView):
