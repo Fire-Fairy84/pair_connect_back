@@ -6,12 +6,12 @@ import cloudinary_storage
 import cloudinary.api
 from datetime import timedelta
 from dotenv import load_dotenv
+
 # load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
-
 
 SECRET_KEY = 'django-insecure-4)q*%jaifuf8+ol69yes+=$y)%dg@5-j^l2q)v7v60#wv+)i@o'
 
@@ -71,7 +71,10 @@ ROOT_URLCONF = 'pair_connect.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'users', 'templates'),
+            os.path.join(BASE_DIR, 'projects', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -85,7 +88,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'pair_connect.wsgi.application'
-
 
 DATABASES = {
     'default': {
@@ -126,7 +128,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -140,7 +141,6 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 cloudinary.config(
@@ -149,7 +149,7 @@ cloudinary.config(
     api_secret=os.environ.get('API_SECRET'),
 )
 
-SITE_NAME = 'localhost:5173'  # Change to your domain
+SITE_NAME = 'localhost:5173'
 DOMAIN = 'localhost:5173'
 
 DJOSER = {
@@ -167,8 +167,7 @@ DJOSER = {
         'current_user': 'users.serializers.CustomUserSerializer',
     },
     'EMAIL': {
-        # 'activation': 'users.emails.ActivationEmail',
-        'activation': 'djoser.email.ActivationEmail',
+        'activation': 'users.email_service.ActivationEmail',
         'confirmation': 'djoser.email.ConfirmationEmail',
     },
 }
@@ -181,7 +180,6 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
-
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST')

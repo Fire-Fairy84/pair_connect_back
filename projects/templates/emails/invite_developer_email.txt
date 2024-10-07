@@ -1,0 +1,10 @@
+¡Hola, {{ developer_name }}!
+
+{{ owner_name }} te ha invitado a unirte a la sesión de programación: "{{ session_description }}".
+
+La sesión se llevará a cabo el {{ session_date }}. Puedes ver más detalles aquí: {{ session_link }}.
+
+¡Esperamos verte ahí! No olvides traer tus ganas de aprender y programar. 😊
+
+Un saludo,
+El equipo de Pair Connect
