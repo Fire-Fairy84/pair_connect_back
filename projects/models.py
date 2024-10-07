@@ -11,7 +11,7 @@ class Project(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
-    image = CloudinaryField('image', null=True, blank=True)
+    image = CloudinaryField('image', null=True, blank=True, default="https://res.cloudinary.com/dwzqcmaod/image/upload/v1728120693/neon2_r6qoo1.png")
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=False)
     stack = models.ForeignKey(Stack, on_delete=models.CASCADE)
@@ -27,6 +27,7 @@ class Project(models.Model):
 
 class Session(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='sessions')
+    name = models.CharField(max_length=255, default="Default Session Name")
     host = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True)
     description = models.TextField(null=True, blank=True)
     schedule_date_time = models.DateTimeField()

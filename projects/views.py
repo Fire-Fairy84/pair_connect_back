@@ -1,15 +1,17 @@
 from rest_framework import viewsets, generics, permissions, status, serializers
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import viewsets, generics, permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from .email_service import EmailService
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
