@@ -106,11 +106,19 @@ class SessionCreationService:
             if project.owner != user:
                 raise PermissionDenied("Only the owner of the project can create sessions.")
 
+            session_data.pop('project', None)
+            languages = session_data.pop('languages', None)
+
             session = Session.objects.create(
                 project=project,
                 host=user,
+                level=project.level,
                 **session_data
             )
+
+            if languages:
+                session.languages.set(languages)
+
             return session
 
         except Project.DoesNotExist:
