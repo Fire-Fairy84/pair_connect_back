@@ -9,7 +9,9 @@ from .serializers import ProjectSerializer, SessionSerializer, InterestedPartici
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
-from .email_service import EmailService
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -57,6 +59,58 @@ class SessionsByProjectView(generics.ListAPIView):
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
     serializer_class = InterestedParticipantSerializer
+    permission_classes = [IsAuthenticated] 
+
+    def perform_create(self, serializer):
+        try:
+            session_id = self.request.data.get('session')
+            if not session_id:
+                raise ValidationError("Session ID is required.")
+
+            session = get_object_or_404(Session, id=session_id)
+
+            if InterestedParticipant.objects.filter(user=self.request.user, session=session).exists():
+                raise ValidationError("You are already interested in this session.")
+
+            interested_participant = serializer.save(user=self.request.user)
+
+            return Response(
+                {
+                    "message": "You have successfully expressed interest in this session.",
+                    "participant": InterestedParticipantSerializer(interested_participant).data
+                }, 
+                status=status.HTTP_201_CREATED
+            )
+
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_409_CONFLICT
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
+
+
+
+class CheckUserInterestView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, session_id):
+        try:
+            session = get_object_or_404(Session, id=session_id)
+
+            is_interested = InterestedParticipant.objects.filter(user=request.user, session=session).exists()
+
+            return Response({"is_interested": is_interested}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
