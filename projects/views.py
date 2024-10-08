@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from users.services import DeveloperDataService
+from .email_service import EmailService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
@@ -59,7 +60,7 @@ class SessionsByProjectView(generics.ListAPIView):
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
     serializer_class = InterestedParticipantSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         """
@@ -81,21 +82,22 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
                 {
                     "message": "You have successfully expressed interest in this session.",
                     "participant": InterestedParticipantSerializer(interested_participant).data
-                }, 
+                },
                 status=status.HTTP_201_CREATED
             )
 
         except ValidationError as e:
             return Response(
-                {"error": str(e)}, 
+                {"error": str(e)},
                 status=status.HTTP_409_CONFLICT
             )
 
         except Exception as e:
             return Response(
-                {"error": str(e)}, 
+                {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
     @action(detail=True, methods=['get'], url_path='interested-users')
     def get_interested_users(self, request, pk=None):
         """
@@ -107,8 +109,8 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
         users = [participant.user for participant in interested_participants]
         serializer = CustomUserSerializer(users, many=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CheckUserInterestView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -146,7 +148,8 @@ def invite_developer_to_session(request, session_id, developer_id):
     try:
         session = Session.objects.get(id=session_id)
         developer = CustomUser.objects.get(id=developer_id)
-        EmailService.send_invite_email(session, developer)
+        invitation_service = InvitationService(session, developer)
+        invitation_service.send_invitation()
 
         return Response({"message": "Invitation sent successfully"}, status=status.HTTP_200_OK)
 

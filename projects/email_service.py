@@ -7,14 +7,15 @@ class EmailService:
     @staticmethod
     def send_invite_email(session, developer):
         try:
-            subject = f"¡{session.project.owner.name} te invita a una sesión de programación!"
+            owner = session.project.owner
+            subject = f"¡{owner.username} te invita a una sesión de programación!"
 
             context = {
-                'developer_name': developer.name,
-                'owner_name': session.project.owner.name,
+                'developer_name': developer.username,
+                'owner_name': owner.username,
                 'session_description': session.description,
                 'session_date': session.schedule_date_time.strftime("%d-%m-%Y %H:%M"),
-                'session_link': session.session_link or "http://localhost:5173",
+                'session_link': f"http://localhost:5173/sessions/{session.id}/",
             }
 
             html_content = render_to_string('emails/invite_developer_email.html', context)
