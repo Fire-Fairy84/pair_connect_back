@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
 from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer, SessionParticipantSerializer
@@ -57,28 +58,40 @@ class SessionsByProjectView(generics.ListAPIView):
 
 
 
-class SessionViewSet(viewsets.ModelViewSet):
-    queryset = Session.objects.all()
-    serializer_class = SessionParticipantSerializer
-    permission_classes = [IsAuthenticated]  
+class ConfirmParticipantView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    @action(detail=True, methods=['post'], url_path='confirm-participant')
-    def confirm_participant(self, request, pk=None):
-        session = get_object_or_404(Session, pk=pk)
+    def post(self, request, session_id):
+        try:
+            session = get_object_or_404(Session, id=session_id)
 
-        if session.host != request.user:
-            return Response({"error": "Only the host can confirm participants."}, status=status.HTTP_403_FORBIDDEN)
+            if session.host != request.user:
+                raise PermissionError("Only the host can confirm participants.")
 
-        developer_username = request.data.get('username')
-        developer = get_object_or_404(CustomUser, username=developer_username)
+            developer_username = request.data.get('username')
+            if not developer_username:
+                raise ValueError("Developer username is required.")
 
-        if session.participants.count() >= session.participant_limit > 0:
-            return Response({"error": "Participant limit reached."}, status=status.HTTP_400_BAD_REQUEST)
+            developer = get_object_or_404(CustomUser, username=developer_username)
 
-        session.participants.add(developer)
+            if session.participants.count() >= session.participant_limit > 0:
+                raise ValueError("Participant limit reached.")
 
-        return Response({"message": f"Developer {developer.username} has been confirmed for the session."}, status=status.HTTP_200_OK)
+            session.participants.add(developer)
 
+            return Response(
+                {"message": f"Developer {developer.username} has been confirmed for the session."},
+                    status=status.HTTP_200_OK
+                )
+
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
