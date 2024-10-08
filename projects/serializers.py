@@ -5,6 +5,7 @@ from .models import Project, Session, InterestedParticipant
 
 
 class SessionSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=255)
     owner_id = serializers.PrimaryKeyRelatedField(source='host', read_only=True)
     owner_name = serializers.CharField(source='host.username', read_only=True)
     stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
@@ -21,7 +22,7 @@ class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = [
-            'id', 'description', 'schedule_date_time', 'duration',
+            'id', 'name', 'description', 'schedule_date_time', 'duration',
             'stack_id', 'stack_name',
             'level_id', 'level_name',
             'language_ids', 'language_names',
@@ -51,6 +52,7 @@ class SessionParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = ['participants']
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.username', read_only=True)
