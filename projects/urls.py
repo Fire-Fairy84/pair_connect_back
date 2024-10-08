@@ -18,8 +18,8 @@ urlpatterns = [
          name='developer_private_data'),
     path('users/suggested-sessions/', get_suggested_sessions_for_user, name='suggested_sessions'),
     path('projects/<int:project_id>/sessions/', SessionsByProjectView.as_view(), name='sessions_by_project'),
-path('sessions/<int:session_id>/developers/<int:developer_id>/invite/', invite_developer_to_session, name='invite_developer'),
+    path('sessions/<int:session_id>/developers/<int:developer_id>/invite/', invite_developer_to_session, name='invite_developer'),
     path('', include(router.urls)),
-        path('sessions/<int:session_id>/check-interest/', CheckUserInterestView.as_view(), name='check_interest'),
+    path('sessions/<int:session_id>/check-interest/', CheckUserInterestView.as_view(), name='check_interest'),
 
 ]

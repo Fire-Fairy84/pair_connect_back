@@ -1,6 +1,6 @@
 from rest_framework import viewsets, generics, permissions, status, serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from users.services import DeveloperDataService
@@ -63,6 +63,9 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
+        """
+            Create a new interested participant
+        """
         try:
             session_id = self.request.data.get('session')
             if not session_id:
@@ -95,9 +98,19 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def get_queryset(self):
-        return super().get_queryset().filter(user=self.request.user)
+    @action(detail=True, methods=['get'], url_path='interested-users')
+    def get_interested_users(self, request, pk=None):
+        """
+            Get all interested users for a session
+        """
+        session = get_object_or_404(Session, id=pk)
+        interested_participants = InterestedParticipant.objects.filter(session=session).select_related('user')
 
+        users = [participant.user for participant in interested_participants]
+        serializer = CustomUserSerializer(users, many=True)
+
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CheckUserInterestView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
