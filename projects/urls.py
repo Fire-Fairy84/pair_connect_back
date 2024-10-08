@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (ProjectViewSet, SessionViewSet, InterestedParticipantViewSet, get_suggested_developers,
                     get_developer_public_data, get_developer_private_data, get_suggested_sessions_for_user,
-                    SessionsByProjectView, invite_developer_to_session, CheckUserInterestView)
+                    SessionsByProjectView, invite_developer_to_session, CheckUserInterestView, ConfirmParticipantView)
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet)
@@ -21,5 +21,6 @@ urlpatterns = [
     path('sessions/<int:session_id>/developers/<int:developer_id>/invite/', invite_developer_to_session, name='invite_developer'),
     path('', include(router.urls)),
     path('sessions/<int:session_id>/check-interest/', CheckUserInterestView.as_view(), name='check_interest'),
+    path('sessions/<int:session_id>/confirm-participant/', ConfirmParticipantView.as_view(), name='confirm_participant'),
 
 ]

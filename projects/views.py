@@ -3,9 +3,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
 from users.services import DeveloperDataService
+from .email_service import EmailService
 from .models import Project, Session, InterestedParticipant, Session
-from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
+from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer, SessionParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
@@ -56,10 +58,46 @@ class SessionsByProjectView(generics.ListAPIView):
         return Session.objects.filter(project__id=project_id)
 
 
+
+class ConfirmParticipantView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, session_id):
+        try:
+            session = get_object_or_404(Session, id=session_id)
+
+            if session.host != request.user:
+                raise PermissionError("Only the host can confirm participants.")
+
+            developer_username = request.data.get('username')
+            if not developer_username:
+                raise ValueError("Developer username is required.")
+
+            developer = get_object_or_404(CustomUser, username=developer_username)
+
+            if session.participants.count() >= session.participant_limit > 0:
+                raise ValueError("Participant limit reached.")
+
+            session.participants.add(developer)
+
+            return Response(
+                {"message": f"Developer {developer.username} has been confirmed for the session."},
+                    status=status.HTTP_200_OK
+                )
+
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
     serializer_class = InterestedParticipantSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         """
@@ -81,21 +119,22 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
                 {
                     "message": "You have successfully expressed interest in this session.",
                     "participant": InterestedParticipantSerializer(interested_participant).data
-                }, 
+                },
                 status=status.HTTP_201_CREATED
             )
 
         except ValidationError as e:
             return Response(
-                {"error": str(e)}, 
+                {"error": str(e)},
                 status=status.HTTP_409_CONFLICT
             )
 
         except Exception as e:
             return Response(
-                {"error": str(e)}, 
+                {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
     @action(detail=True, methods=['get'], url_path='interested-users')
     def get_interested_users(self, request, pk=None):
         """
@@ -107,8 +146,8 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
         users = [participant.user for participant in interested_participants]
         serializer = CustomUserSerializer(users, many=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CheckUserInterestView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -146,7 +185,8 @@ def invite_developer_to_session(request, session_id, developer_id):
     try:
         session = Session.objects.get(id=session_id)
         developer = CustomUser.objects.get(id=developer_id)
-        EmailService.send_invite_email(session, developer)
+        invitation_service = InvitationService(session, developer)
+        invitation_service.send_invitation()
 
         return Response({"message": "Invitation sent successfully"}, status=status.HTTP_200_OK)
 
