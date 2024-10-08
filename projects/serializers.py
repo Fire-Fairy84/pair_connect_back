@@ -44,6 +44,24 @@ class SessionSerializer(serializers.ModelSerializer):
         return value
 
 
+class SessionDetailSerializer(SessionSerializer):
+    session_link = serializers.URLField(read_only=True)
+    active = serializers.BooleanField(read_only=True)
+    public = serializers.BooleanField(read_only=True)
+    participant_count = serializers.SerializerMethodField()
+
+    class Meta(SessionSerializer.Meta):
+        fields = SessionSerializer.Meta.fields + [
+            'session_link',
+            'active',
+            'public',
+            'participant_count',
+        ]
+
+    def get_participant_count(self, obj):
+        return obj.participants.count()
+
+
 class SessionParticipantSerializer(serializers.ModelSerializer):
     participants = serializers.SlugRelatedField(
         queryset=CustomUser.objects.all(), slug_field='username', many=True

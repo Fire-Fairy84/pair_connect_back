@@ -9,7 +9,7 @@ from users.serializers import CustomUserSerializer
 from users.models import CustomUser
 from .email_service import EmailService
 from .models import Project, Session, InterestedParticipant, Session
-from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer, \
+from .serializers import ProjectSerializer, SessionSerializer, SessionDetailSerializer, InterestedParticipantSerializer, \
     SessionParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 
@@ -249,7 +249,7 @@ def get_suggested_sessions_for_user(request):
 
 
 class UserHostedSessionsView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = SessionSerializer
 
     def get_queryset(self):
@@ -258,7 +258,7 @@ class UserHostedSessionsView(generics.ListAPIView):
 
 
 class UserParticipatingSessionsView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = SessionSerializer
 
     def get_queryset(self):
@@ -267,24 +267,25 @@ class UserParticipatingSessionsView(generics.ListAPIView):
 
 
 class UserInterestedSessionsView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = SessionSerializer
 
     def get_queryset(self):
         user = self.request.user
-        interested_sessions = InterestedParticipant.objects.filter(user=user).values_list('session', flat=True)
-        return Session.objects.filter(id__in=interested_sessions)
+        interested_sessions_ids = InterestedParticipant.objects.filter(user=user).values_list('session_id', flat=True)
+        return Session.objects.filter(id__in=interested_sessions_ids)
 
 
 class UserSessionsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
+
         hosted_sessions = Session.objects.filter(host=user)
-        participating_sessions = Session.objects.filter(participants=user).exclude(host=user)
-        interested_sessions_ids = InterestedParticipant.objects.filter(user=user).values_list('session', flat=True)
-        interested_sessions = Session.objects.filter(id__in=interested_sessions_ids).exclude(host=user).exclude(participants=user)
+        participating_sessions = Session.objects.filter(participants=user)
+        interested_sessions_ids = InterestedParticipant.objects.filter(user=user).values_list('session_id', flat=True)
+        interested_sessions = Session.objects.filter(id__in=interested_sessions_ids)
 
         hosted_serializer = SessionSerializer(hosted_sessions, many=True)
         participating_serializer = SessionSerializer(participating_sessions, many=True)
