@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from users.services import DeveloperDataService
+from .email_service import EmailService
 from .models import Project, Session, InterestedParticipant, Session
 from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
@@ -59,7 +60,7 @@ class SessionsByProjectView(generics.ListAPIView):
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
     serializer_class = InterestedParticipantSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         try:
@@ -78,24 +79,24 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
                 {
                     "message": "You have successfully expressed interest in this session.",
                     "participant": InterestedParticipantSerializer(interested_participant).data
-                }, 
+                },
                 status=status.HTTP_201_CREATED
             )
 
         except ValidationError as e:
             return Response(
-                {"error": str(e)}, 
+                {"error": str(e)},
                 status=status.HTTP_409_CONFLICT
             )
 
         except Exception as e:
             return Response(
-                {"error": str(e)}, 
+                {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
     def get_queryset(self):
         return super().get_queryset().filter(user=self.request.user)
-
 
 
 class CheckUserInterestView(generics.GenericAPIView):

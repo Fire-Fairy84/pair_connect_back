@@ -9,7 +9,8 @@ class SessionSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='host.username', read_only=True)
     stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
-    level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), required=False, allow_null=True, write_only=True)
+    level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), required=False,
+                                                  allow_null=True, write_only=True)
     level_name = serializers.CharField(source='level.name', read_only=True)
     language_ids = serializers.PrimaryKeyRelatedField(many=True, source='languages',
                                                       queryset=ProgLanguage.objects.all(), write_only=True)
@@ -41,11 +42,12 @@ class SessionSerializer(serializers.ModelSerializer):
 
         return value
 
+
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.username', read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)
     owner_avatar_url = serializers.CharField(source='owner.photo', read_only=True)
-    image_url = serializers.CharField(source='image.url', read_only=True)  # Ya no es SerializerMethodField
+    image_url = serializers.CharField(source='image.url', read_only=True)
     stack = serializers.PrimaryKeyRelatedField(queryset=Stack.objects.all(), write_only=True)
     stack_name = serializers.CharField(source='stack.name', read_only=True)
     languages = serializers.PrimaryKeyRelatedField(many=True, queryset=ProgLanguage.objects.all(), write_only=True)
@@ -93,4 +95,4 @@ class ProjectSerializer(serializers.ModelSerializer):
 class InterestedParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = InterestedParticipant
-        fields = ['session', 'date_created_interested'] 
+        fields = ['session', 'date_created_interested']
