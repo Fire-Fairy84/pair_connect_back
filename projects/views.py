@@ -3,10 +3,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
 from users.services import DeveloperDataService
 from .email_service import EmailService
 from .models import Project, Session, InterestedParticipant, Session
-from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
+from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer, SessionParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
@@ -56,6 +57,42 @@ class SessionsByProjectView(generics.ListAPIView):
         project_id = self.kwargs['project_id']
         return Session.objects.filter(project__id=project_id)
 
+
+
+class ConfirmParticipantView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, session_id):
+        try:
+            session = get_object_or_404(Session, id=session_id)
+
+            if session.host != request.user:
+                raise PermissionError("Only the host can confirm participants.")
+
+            developer_username = request.data.get('username')
+            if not developer_username:
+                raise ValueError("Developer username is required.")
+
+            developer = get_object_or_404(CustomUser, username=developer_username)
+
+            if session.participants.count() >= session.participant_limit > 0:
+                raise ValueError("Participant limit reached.")
+
+            session.participants.add(developer)
+
+            return Response(
+                {"message": f"Developer {developer.username} has been confirmed for the session."},
+                    status=status.HTTP_200_OK
+                )
+
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
