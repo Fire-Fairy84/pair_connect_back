@@ -135,7 +135,8 @@ def invite_developer_to_session(request, session_id, developer_id):
     try:
         session = Session.objects.get(id=session_id)
         developer = CustomUser.objects.get(id=developer_id)
-        EmailService.send_invite_email(session, developer)
+        invitation_service = InvitationService(session, developer)
+        invitation_service.send_invitation()
 
         return Response({"message": "Invitation sent successfully"}, status=status.HTTP_200_OK)
 
