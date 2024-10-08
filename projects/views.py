@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from users.services import DeveloperDataService
 from .models import Project, Session, InterestedParticipant, Session
-from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer
+from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer, SessionParticipantSerializer
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
@@ -54,6 +54,30 @@ class SessionsByProjectView(generics.ListAPIView):
     def get_queryset(self):
         project_id = self.kwargs['project_id']
         return Session.objects.filter(project__id=project_id)
+
+
+
+class SessionViewSet(viewsets.ModelViewSet):
+    queryset = Session.objects.all()
+    serializer_class = SessionParticipantSerializer
+    permission_classes = [IsAuthenticated]  
+
+    @action(detail=True, methods=['post'], url_path='confirm-participant')
+    def confirm_participant(self, request, pk=None):
+        session = get_object_or_404(Session, pk=pk)
+
+        if session.host != request.user:
+            return Response({"error": "Only the host can confirm participants."}, status=status.HTTP_403_FORBIDDEN)
+
+        developer_username = request.data.get('username')
+        developer = get_object_or_404(CustomUser, username=developer_username)
+
+        if session.participants.count() >= session.participant_limit > 0:
+            return Response({"error": "Participant limit reached."}, status=status.HTTP_400_BAD_REQUEST)
+
+        session.participants.add(developer)
+
+        return Response({"message": f"Developer {developer.username} has been confirmed for the session."}, status=status.HTTP_200_OK)
 
 
 class InterestedParticipantViewSet(viewsets.ModelViewSet):

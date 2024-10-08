@@ -41,6 +41,16 @@ class SessionSerializer(serializers.ModelSerializer):
 
         return value
 
+
+class SessionParticipantSerializer(serializers.ModelSerializer):
+    participants = serializers.SlugRelatedField(
+        queryset=CustomUser.objects.all(), slug_field='username', many=True
+    )
+
+    class Meta:
+        model = Session
+        fields = ['participants']
+
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.username', read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source='owner', read_only=True)
