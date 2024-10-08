@@ -1,4 +1,4 @@
-from rest_framework import viewsets, generics, permissions, status
+from rest_framework import viewsets, generics, permissions, status, serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -9,7 +9,9 @@ from .serializers import ProjectSerializer, SessionSerializer, InterestedPartici
 from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
 from users.serializers import CustomUserSerializer
 from users.models import CustomUser
-from .email_service import EmailService
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -33,11 +35,17 @@ class SessionViewSet(viewsets.ModelViewSet):
     serializer_class = SessionSerializer
 
     def perform_create(self, serializer):
-        project_id = serializer.validated_data['project'].id
+        project_id = self.request.data.get('project')
+        if not project_id:
+            raise serializers.ValidationError("Project ID is required to create a session.")
+
+        if not Project.objects.filter(id=project_id).exists():
+            raise serializers.ValidationError("Project does not exist.")
+
         session_data = serializer.validated_data
 
-        SessionCreationService.handle_create_session(self.request.user, project_id, session_data)
-        serializer.save(host=self.request.user)
+        session = SessionCreationService.handle_create_session(self.request.user, project_id, session_data)
+        serializer.instance = session
 
 
 class SessionsByProjectView(generics.ListAPIView):
@@ -51,6 +59,58 @@ class SessionsByProjectView(generics.ListAPIView):
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
     serializer_class = InterestedParticipantSerializer
+    permission_classes = [IsAuthenticated] 
+
+    def perform_create(self, serializer):
+        try:
+            session_id = self.request.data.get('session')
+            if not session_id:
+                raise ValidationError("Session ID is required.")
+
+            session = get_object_or_404(Session, id=session_id)
+
+            if InterestedParticipant.objects.filter(user=self.request.user, session=session).exists():
+                raise ValidationError("You are already interested in this session.")
+
+            interested_participant = serializer.save(user=self.request.user)
+
+            return Response(
+                {
+                    "message": "You have successfully expressed interest in this session.",
+                    "participant": InterestedParticipantSerializer(interested_participant).data
+                }, 
+                status=status.HTTP_201_CREATED
+            )
+
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_409_CONFLICT
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
+
+
+
+class CheckUserInterestView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, session_id):
+        try:
+            session = get_object_or_404(Session, id=session_id)
+
+            is_interested = InterestedParticipant.objects.filter(user=request.user, session=session).exists()
+
+            return Response({"is_interested": is_interested}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
