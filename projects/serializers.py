@@ -7,48 +7,28 @@ from .models import InterestedParticipant, Project, Session
 
 
 class SessionSerializer(serializers.ModelSerializer):
-    owner_id = serializers.PrimaryKeyRelatedField(source="host", read_only=True)
-    owner_name = serializers.CharField(source="host.username", read_only=True)
-    stack_id = serializers.PrimaryKeyRelatedField(
-        source="stack", queryset=Stack.objects.all(), write_only=True
-    )
-    stack_name = serializers.CharField(source="stack.name", read_only=True)
-    level_id = serializers.PrimaryKeyRelatedField(
-        source="level",
-        queryset=Level.objects.all(),
-        required=False,
-        allow_null=True,
-        write_only=True,
-    )
-    level_name = serializers.CharField(source="level.name", read_only=True)
-    language_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        source="languages",
-        queryset=ProgLanguage.objects.all(),
-        write_only=True,
-    )
-    language_names = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field="name", source="languages"
-    )
-    project_id = serializers.IntegerField(source="project.id", read_only=True)
+    name = serializers.CharField(max_length=255)
+    owner_id = serializers.PrimaryKeyRelatedField(source='host', read_only=True)
+    owner_name = serializers.CharField(source='host.username', read_only=True)
+    stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
+    stack_name = serializers.CharField(source='stack.name', read_only=True)
+    level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), required=False,
+                                                  allow_null=True, write_only=True)
+    level_name = serializers.CharField(source='level.name', read_only=True)
+    language_ids = serializers.PrimaryKeyRelatedField(many=True, source='languages',
+                                                      queryset=ProgLanguage.objects.all(), write_only=True)
+    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
+    project_id = serializers.IntegerField(source='project.id', read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Session
         fields = [
-            "id",
-            "description",
-            "schedule_date_time",
-            "duration",
-            "stack_id",
-            "stack_name",
-            "level_id",
-            "level_name",
-            "language_ids",
-            "language_names",
-            "project_id",
-            "owner_id",
-            "owner_name",
+            'id', 'name', 'description', 'schedule_date_time', 'duration',
+            'stack_id', 'stack_name',
+            'level_id', 'level_name',
+            'language_ids', 'language_names',
+            'project_id', 'owner_id', 'owner_name'
         ]
 
     def validate_languages(self, value):
@@ -70,6 +50,24 @@ class SessionSerializer(serializers.ModelSerializer):
         return value
 
 
+class SessionDetailSerializer(SessionSerializer):
+    session_link = serializers.URLField(read_only=True)
+    active = serializers.BooleanField(read_only=True)
+    public = serializers.BooleanField(read_only=True)
+    participant_count = serializers.SerializerMethodField()
+
+    class Meta(SessionSerializer.Meta):
+        fields = SessionSerializer.Meta.fields + [
+            'session_link',
+            'active',
+            'public',
+            'participant_count',
+        ]
+
+    def get_participant_count(self, obj):
+        return obj.participants.count()
+
+
 class SessionParticipantSerializer(serializers.ModelSerializer):
     participants = serializers.SlugRelatedField(
         queryset=CustomUser.objects.all(), slug_field="username", many=True
@@ -78,6 +76,7 @@ class SessionParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = ["participants"]
+
 
 
 class ProjectSerializer(serializers.ModelSerializer):
