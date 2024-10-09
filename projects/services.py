@@ -1,7 +1,8 @@
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from users.models import CustomUser
 from .email_service import EmailService
-from projects.models import Session, Project
+from projects.models import Session, Project, InterestedParticipant
 
 
 class SessionService:
@@ -39,15 +40,55 @@ class DeveloperSuggestionService:
             session_stack = self.session.stack
             session_level = self.session.level
             session_languages = list(self.session.languages.all())
-            suggested_users = CustomUser.objects.filter(stack=session_stack)
 
-            if session_languages:
-                suggested_users = suggested_users.filter(prog_language__in=session_languages).distinct()
+            interested_user_ids = InterestedParticipant.objects.filter(session=self.session).values_list('user_id',
+                                                                                                         flat=True)
+            stack_filter = Q()
+            if session_stack == 'Fullstack':
+                stack_filter = Q(stack='Fullstack') | Q(stack='Frontend') | Q(stack='Backend')
+            elif session_stack == 'Frontend':
+                stack_filter = Q(stack='Frontend') | Q(stack='Fullstack')
+            elif session_stack == 'Backend':
+                stack_filter = Q(stack='Backend') | Q(stack='Fullstack')
 
-            if session_level:
-                suggested_users = suggested_users.filter(level=session_level)
+            language_filter = Q()
+            for language in session_languages:
+                language_filter |= Q(prog_language=language)
 
-            return suggested_users
+            suggested_users = CustomUser.objects.exclude(
+                id__in=interested_user_ids
+            ).filter(
+                stack_filter,
+                level=session_level,
+                is_staff=False,
+                prog_language__isnull=False,
+                stack__isnull=False
+            ).filter(language_filter).distinct()
+
+            if suggested_users.count() >= 5:
+                return suggested_users
+
+            relaxed_users = CustomUser.objects.exclude(
+                id__in=interested_user_ids
+            ).filter(
+                stack_filter,
+                is_staff=False,
+                prog_language__isnull=False,
+                stack__isnull=False
+            ).filter(language_filter).distinct()
+
+            if relaxed_users.count() >= 5:
+                return relaxed_users
+
+            all_suggested_users = CustomUser.objects.exclude(
+                id__in=interested_user_ids
+            ).filter(
+                stack_filter,
+                is_staff=False,
+                stack__isnull=False
+            ).distinct()
+
+            return all_suggested_users
 
         except CustomUser.DoesNotExist:
             raise ValidationError("No developers found matching the criteria.")
