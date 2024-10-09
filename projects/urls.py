@@ -1,13 +1,17 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (  # get_developer_private_data,; get_developer_public_data,
+from .views import (
     CheckUserInterestView,
     ConfirmParticipantView,
     InterestedParticipantViewSet,
     ProjectViewSet,
     SessionsByProjectView,
     SessionViewSet,
+    UserHostedSessionsView,
+    UserInterestedSessionsView,
+    UserParticipatingSessionsView,
+    UserSessionsView,
     get_suggested_developers,
     get_suggested_sessions_for_user,
     invite_developer_to_session,
@@ -29,16 +33,6 @@ urlpatterns = [
         get_suggested_developers,
         name="suggested_developers",
     ),
-    # path(
-    #     "sessions/<int:session_id>/developers/<int:developer_id>/public/",
-    #     get_developer_public_data,
-    #     name="developer_public_data",
-    # ),
-    # path(
-    #     "sessions/<int:session_id>/developers/<int:developer_id>/private/",
-    #     get_developer_private_data,
-    #     name="developer_private_data",
-    # ),
     path(
         "users/suggested-sessions/",
         get_suggested_sessions_for_user,
@@ -54,7 +48,6 @@ urlpatterns = [
         invite_developer_to_session,
         name="invite_developer",
     ),
-    path("", include(router.urls)),
     path(
         "sessions/<int:session_id>/check-interest/",
         CheckUserInterestView.as_view(),
@@ -65,4 +58,21 @@ urlpatterns = [
         ConfirmParticipantView.as_view(),
         name="confirm_participant",
     ),
+    path(
+        "users/sessions/hosted/",
+        UserHostedSessionsView.as_view(),
+        name="user_hosted_sessions",
+    ),
+    path(
+        "users/sessions/participating/",
+        UserParticipatingSessionsView.as_view(),
+        name="user_participating_sessions",
+    ),
+    path(
+        "users/sessions/interested/",
+        UserInterestedSessionsView.as_view(),
+        name="user_interested_sessions",
+    ),
+    path("users/sessions/", UserSessionsView.as_view(), name="user_sessions"),
+    path("", include(router.urls)),
 ]
