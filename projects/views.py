@@ -1,19 +1,29 @@
-from rest_framework import viewsets, generics, permissions, status, serializers
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, serializers, status, viewsets
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from users.services import DeveloperDataService
-from users.serializers import CustomUserSerializer
-from users.models import CustomUser
-from .email_service import EmailService
-from .models import Project, Session, InterestedParticipant, Session
-from .serializers import ProjectSerializer, SessionSerializer, SessionDetailSerializer, InterestedParticipantSerializer, \
-    SessionParticipantSerializer
-from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
-from django.shortcuts import get_object_or_404
 
+from users.models import CustomUser
+from users.serializers import CustomUserSerializer
+
+from .email_service import EmailService
+from .models import InterestedParticipant, Project, Session
+from .serializers import (
+    InterestedParticipantSerializer,
+    ProjectSerializer,
+    SessionDetailSerializer,
+    SessionParticipantSerializer,
+    SessionSerializer,
+)
+from .services import (
+    DeveloperSuggestionService,
+    InvitationService,
+    SessionCreationService,
+    SessionSuggestionService,
+)
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -84,8 +94,10 @@ class ConfirmParticipantView(APIView):
             session.participants.add(developer)
 
             return Response(
-                {"message": f"Developer {developer.username} has been confirmed for the session."},
-                status=status.HTTP_200_OK
+                {
+                    "message": f"Developer {developer.username} has been confirmed for the session."
+                },
+                status=status.HTTP_200_OK,
             )
 
         except PermissionError as e:
@@ -99,7 +111,6 @@ class ConfirmParticipantView(APIView):
                 {"error": "An unexpected error occurred."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
 
 
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
@@ -290,7 +301,9 @@ class UserInterestedSessionsView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        interested_sessions_ids = InterestedParticipant.objects.filter(user=user).values_list('session_id', flat=True)
+        interested_sessions_ids = InterestedParticipant.objects.filter(
+            user=user
+        ).values_list("session_id", flat=True)
         return Session.objects.filter(id__in=interested_sessions_ids)
 
 
@@ -302,15 +315,19 @@ class UserSessionsView(APIView):
 
         hosted_sessions = Session.objects.filter(host=user)
         participating_sessions = Session.objects.filter(participants=user)
-        interested_sessions_ids = InterestedParticipant.objects.filter(user=user).values_list('session_id', flat=True)
+        interested_sessions_ids = InterestedParticipant.objects.filter(
+            user=user
+        ).values_list("session_id", flat=True)
         interested_sessions = Session.objects.filter(id__in=interested_sessions_ids)
 
         hosted_serializer = SessionSerializer(hosted_sessions, many=True)
         participating_serializer = SessionSerializer(participating_sessions, many=True)
         interested_serializer = SessionSerializer(interested_sessions, many=True)
 
-        return Response({
-            'hosted_sessions': hosted_serializer.data,
-            'participating_sessions': participating_serializer.data,
-            'interested_sessions': interested_serializer.data,
-        })
+        return Response(
+            {
+                "hosted_sessions": hosted_serializer.data,
+                "participating_sessions": participating_serializer.data,
+                "interested_sessions": interested_serializer.data,
+            }
+        )
