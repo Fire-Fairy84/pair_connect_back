@@ -63,9 +63,9 @@ class UserProfileView(APIView):
                 session = Session.objects.get(id=session_id)
 
             profile_service = UserProfileService(request.user, user_id)
-            profile_data = profile_service.get_profile_data(session)
+            result = profile_service.get_profile_data(session)
 
-            return Response(profile_data, status=status.HTTP_200_OK)
+            return Response(result, status=status.HTTP_200_OK)
 
         except Session.DoesNotExist:
             return Response(
