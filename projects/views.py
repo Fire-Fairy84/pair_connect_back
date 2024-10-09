@@ -1,19 +1,30 @@
-from rest_framework import viewsets, generics, permissions, status, serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import api_view, action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.views import APIView
-from users.services import DeveloperDataService
-from .email_service import EmailService
-from .models import Project, Session, InterestedParticipant, Session
-from .serializers import ProjectSerializer, SessionSerializer, InterestedParticipantSerializer, SessionParticipantSerializer
-from .services import DeveloperSuggestionService, InvitationService, SessionSuggestionService, SessionCreationService
-from users.serializers import CustomUserSerializer
-from users.models import CustomUser
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, serializers, status, viewsets
+from rest_framework.decorators import action, api_view
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from users.models import CustomUser
+from users.serializers import CustomUserSerializer
+
+from .email_service import EmailService
+from .models import InterestedParticipant, Project, Session
+from .serializers import (
+    InterestedParticipantSerializer,
+    ProjectSerializer,
+    SessionParticipantSerializer,
+    SessionSerializer,
+)
+from .services import (
+    DeveloperSuggestionService,
+    InvitationService,
+    SessionCreationService,
+    SessionSuggestionService,
+)
+
+# from users.services import DeveloperDataService
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -37,16 +48,20 @@ class SessionViewSet(viewsets.ModelViewSet):
     serializer_class = SessionSerializer
 
     def perform_create(self, serializer):
-        project_id = self.request.data.get('project')
+        project_id = self.request.data.get("project")
         if not project_id:
-            raise serializers.ValidationError("Project ID is required to create a session.")
+            raise serializers.ValidationError(
+                "Project ID is required to create a session."
+            )
 
         if not Project.objects.filter(id=project_id).exists():
             raise serializers.ValidationError("Project does not exist.")
 
         session_data = serializer.validated_data
 
-        session = SessionCreationService.handle_create_session(self.request.user, project_id, session_data)
+        session = SessionCreationService.handle_create_session(
+            self.request.user, project_id, session_data
+        )
         serializer.instance = session
 
 
@@ -54,9 +69,8 @@ class SessionsByProjectView(generics.ListAPIView):
     serializer_class = SessionSerializer
 
     def get_queryset(self):
-        project_id = self.kwargs['project_id']
+        project_id = self.kwargs["project_id"]
         return Session.objects.filter(project__id=project_id)
-
 
 
 class ConfirmParticipantView(APIView):
@@ -69,7 +83,7 @@ class ConfirmParticipantView(APIView):
             if session.host != request.user:
                 raise PermissionError("Only the host can confirm participants.")
 
-            developer_username = request.data.get('username')
+            developer_username = request.data.get("username")
             if not developer_username:
                 raise ValueError("Developer username is required.")
 
@@ -81,9 +95,11 @@ class ConfirmParticipantView(APIView):
             session.participants.add(developer)
 
             return Response(
-                {"message": f"Developer {developer.username} has been confirmed for the session."},
-                    status=status.HTTP_200_OK
-                )
+                {
+                    "message": f"Developer {developer.username} has been confirmed for the session."
+                },
+                status=status.HTTP_200_OK,
+            )
 
         except PermissionError as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
@@ -92,7 +108,11 @@ class ConfirmParticipantView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
-            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": "An unexpected error occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 class InterestedParticipantViewSet(viewsets.ModelViewSet):
     queryset = InterestedParticipant.objects.all()
@@ -101,16 +121,18 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-            Create a new interested participant
+        Create a new interested participant
         """
         try:
-            session_id = self.request.data.get('session')
+            session_id = self.request.data.get("session")
             if not session_id:
                 raise ValidationError("Session ID is required.")
 
             session = get_object_or_404(Session, id=session_id)
 
-            if InterestedParticipant.objects.filter(user=self.request.user, session=session).exists():
+            if InterestedParticipant.objects.filter(
+                user=self.request.user, session=session
+            ).exists():
                 raise ValidationError("You are already interested in this session.")
 
             interested_participant = serializer.save(user=self.request.user)
@@ -118,36 +140,34 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     "message": "You have successfully expressed interest in this session.",
-                    "participant": InterestedParticipantSerializer(interested_participant).data
+                    "participant": InterestedParticipantSerializer(
+                        interested_participant
+                    ).data,
                 },
-                status=status.HTTP_201_CREATED
+                status=status.HTTP_201_CREATED,
             )
 
         except ValidationError as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_409_CONFLICT
-            )
+            return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
 
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['get'], url_path='interested-users')
+    @action(detail=True, methods=["get"], url_path="interested-users")
     def get_interested_users(self, request, pk=None):
         """
-            Get all interested users for a session
+        Get all interested users for a session
         """
         session = get_object_or_404(Session, id=pk)
-        interested_participants = InterestedParticipant.objects.filter(session=session).select_related('user')
+        interested_participants = InterestedParticipant.objects.filter(
+            session=session
+        ).select_related("user")
 
         users = [participant.user for participant in interested_participants]
         serializer = CustomUserSerializer(users, many=True)
 
-
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class CheckUserInterestView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -156,7 +176,9 @@ class CheckUserInterestView(generics.GenericAPIView):
         try:
             session = get_object_or_404(Session, id=session_id)
 
-            is_interested = InterestedParticipant.objects.filter(user=request.user, session=session).exists()
+            is_interested = InterestedParticipant.objects.filter(
+                user=request.user, session=session
+            ).exists()
 
             return Response({"is_interested": is_interested}, status=status.HTTP_200_OK)
 
@@ -164,7 +186,7 @@ class CheckUserInterestView(generics.GenericAPIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def get_suggested_developers(request, session_id):
     try:
         session = Session.objects.get(id=session_id)
@@ -175,12 +197,14 @@ def get_suggested_developers(request, session_id):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     except Session.DoesNotExist:
-        return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def invite_developer_to_session(request, session_id, developer_id):
     try:
         session = Session.objects.get(id=session_id)
@@ -188,49 +212,55 @@ def invite_developer_to_session(request, session_id, developer_id):
         invitation_service = InvitationService(session, developer)
         invitation_service.send_invitation()
 
-        return Response({"message": "Invitation sent successfully"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Invitation sent successfully"}, status=status.HTTP_200_OK
+        )
 
     except Session.DoesNotExist:
-        return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND
+        )
     except CustomUser.DoesNotExist:
-        return Response({"error": "Developer not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Developer not found"}, status=status.HTTP_404_NOT_FOUND
+        )
     except ValidationError as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-def get_developer_public_data(request, session_id, developer_id):
-    try:
-        developer_data_service = DeveloperDataService(session_id, developer_id)
-        developer_data = developer_data_service.get_developer_data()
+# @api_view(['GET'])
+# def get_developer_public_data(request, session_id, developer_id):
+#     try:
+#         developer_data_service = DeveloperDataService(session_id, developer_id)
+#         developer_data = developer_data_service.get_developer_data()
 
-        return Response(developer_data, status=status.HTTP_200_OK)
+#         return Response(developer_data, status=status.HTTP_200_OK)
 
-    except ValidationError as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+#     except ValidationError as e:
+#         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-def get_developer_private_data(request, session_id, developer_id):
-    try:
-        developer_data_service = DeveloperDataService(session_id, developer_id)
-        developer_data = developer_data_service.get_developer_data(public=False)
-
-        return Response(developer_data, status=status.HTTP_200_OK)
-
-    except ValidationError as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     except Exception as e:
+#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
+# def get_developer_private_data(request, session_id, developer_id):
+#     try:
+#         developer_data_service = DeveloperDataService(session_id, developer_id)
+#         developer_data = developer_data_service.get_developer_data(public=False)
+
+#         return Response(developer_data, status=status.HTTP_200_OK)
+
+#     except ValidationError as e:
+#         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+#     except Exception as e:
+#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
 def get_suggested_sessions_for_user(request):
     try:
         user = request.user
