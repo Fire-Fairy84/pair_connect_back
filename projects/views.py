@@ -229,34 +229,36 @@ def invite_developer_to_session(request, session_id, developer_id):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# @api_view(['GET'])
-# def get_developer_public_data(request, session_id, developer_id):
-#     try:
-#         developer_data_service = DeveloperDataService(session_id, developer_id)
-#         developer_data = developer_data_service.get_developer_data()
+class CheckUserParticipationView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
 
-#         return Response(developer_data, status=status.HTTP_200_OK)
+    def get(self, request, session_id, user_id):
+        try:
+            session = get_object_or_404(Session, id=session_id)
 
-#     except ValidationError as e:
-#         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            user = get_object_or_404(CustomUser, id=user_id)
 
-#     except Exception as e:
-#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            is_participant = session.participants.filter(id=user.id).exists()
 
+            return Response(
+                {"is_participant": is_participant}, status=status.HTTP_200_OK
+            )
 
-# @api_view(['GET'])
-# def get_developer_private_data(request, session_id, developer_id):
-#     try:
-#         developer_data_service = DeveloperDataService(session_id, developer_id)
-#         developer_data = developer_data_service.get_developer_data(public=False)
+        except Session.DoesNotExist:
+            return Response(
+                {"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
-#         return Response(developer_data, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
-#     except ValidationError as e:
-#         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-#     except Exception as e:
-#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response(
+                {"error": f"An unexpected error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 @api_view(["GET"])
