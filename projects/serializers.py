@@ -20,6 +20,7 @@ class SessionSerializer(serializers.ModelSerializer):
     language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
     project_id = serializers.IntegerField(source='project.id', read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
+    project_name = serializers.CharField(source='project.name', read_only=True)
 
     class Meta:
         model = Session
@@ -28,7 +29,7 @@ class SessionSerializer(serializers.ModelSerializer):
             'stack_id', 'stack_name',
             'level_id', 'level_name',
             'language_ids', 'language_names',
-            'project_id', 'owner_id', 'owner_name'
+            'project_id', 'project_name', 'owner_id', 'owner_name'
         ]
 
     def validate_languages(self, value):
@@ -62,6 +63,7 @@ class SessionDetailSerializer(SessionSerializer):
             'active',
             'public',
             'participant_count',
+            'project_name'
         ]
 
     def get_participant_count(self, obj):
