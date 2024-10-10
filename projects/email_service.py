@@ -59,3 +59,31 @@ class EmailService:
 
         except Exception as e:
             raise Exception(f"Error sending interest notification email: {str(e)}")
+
+    @staticmethod
+    def send_confirmation_email(session, developer):
+        try:
+            subject = f"¡Has sido confirmadx para la sesión de {session.name}!"
+
+            context = {
+                'developer_name': developer.username,
+                'session_name': session.name,
+                'session_description': session.description,
+                'session_date': session.schedule_date_time.strftime("%d-%m-%Y %H:%M"),
+                'session_link': f"http://localhost:5173/sessions/{session.id}/",
+            }
+
+            html_content = render_to_string('emails/confirmation_email.html', context)
+            text_content = render_to_string('emails/confirmation_email.txt', context)
+
+            email = EmailMultiAlternatives(
+                subject,
+                text_content,
+                settings.DEFAULT_FROM_EMAIL,
+                [developer.email]
+            )
+            email.attach_alternative(html_content, "text/html")
+            email.send()
+
+        except Exception as e:
+            raise Exception(f"Error sending confirmation email: {str(e)}")

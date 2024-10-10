@@ -20,7 +20,9 @@ from .services import (
     DeveloperSuggestionService,
     InvitationService,
     SessionCreationService,
-    SessionSuggestionService, InterestNotificationService,
+    SessionSuggestionService,
+    InterestNotificationService,
+    ConfirmationNotificationService,
 )
 
 
@@ -90,6 +92,9 @@ class ConfirmParticipantView(APIView):
                 raise ValueError("Participant limit reached.")
 
             session.participants.add(developer)
+
+            confirmation_service = ConfirmationNotificationService(session, developer)
+            confirmation_service.send_confirmation()
 
             return Response(
                 {
