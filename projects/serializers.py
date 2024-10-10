@@ -37,6 +37,9 @@ class SessionSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True)
     project_name = serializers.CharField(source="project.name", read_only=True)
     participants = CustomUserSerializer(many=True, read_only=True)
+    session_link = serializers.URLField(required=False, allow_blank=True)
+    participant_limit = serializers.IntegerField(required=False, allow_null=True)
+    is_private = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = Session
@@ -58,6 +61,10 @@ class SessionSerializer(serializers.ModelSerializer):
             "owner_name",
             "owner_avatar_url",
             "participants",
+            "session_link",
+            "participant_limit",
+            "is_private",
+            "public",
         ]
 
     def validate_languages(self, value):
@@ -77,6 +84,25 @@ class SessionSerializer(serializers.ModelSerializer):
                 )
 
         return value
+
+    def update(self, instance, validated_data):
+        instance.session_link = validated_data.get("session_link", instance.session_link)
+        instance.participant_limit = validated_data.get("participant_limit", instance.participant_limit)
+        instance.description = validated_data.get("description", instance.description)
+        instance.schedule_date_time = validated_data.get("schedule_date_time", instance.schedule_date_time)
+        instance.duration = validated_data.get("duration", instance.duration)
+        is_private = validated_data.get("is_private", None)
+        if is_private is not None:
+            instance.public = not is_private
+
+        instance.save()
+        print("Updated Instance:", instance)
+        return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["is_private"] = not instance.public
+        return representation
 
 
 class SessionDetailSerializer(SessionSerializer):
