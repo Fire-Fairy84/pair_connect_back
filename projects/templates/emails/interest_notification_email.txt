@@ -1,0 +1,10 @@
+Hola, {{ owner_name }}!
+
+{{ interested_user }} está interesado en tu sesión "{{ session_name }}".
+
+Puedes ver más detalles de la sesión aquí: {{ session_link }}
+
+Gracias por usar Pair Connect.
+
+Un saludo,
+El equipo de Pair Connect
