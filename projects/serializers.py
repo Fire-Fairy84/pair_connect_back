@@ -8,28 +8,53 @@ from .models import InterestedParticipant, Project, Session
 
 class SessionSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=255)
-    owner_id = serializers.PrimaryKeyRelatedField(source='host', read_only=True)
-    owner_name = serializers.CharField(source='host.username', read_only=True)
-    stack_id = serializers.PrimaryKeyRelatedField(source='stack', queryset=Stack.objects.all(), write_only=True)
-    stack_name = serializers.CharField(source='stack.name', read_only=True)
-    level_id = serializers.PrimaryKeyRelatedField(source='level', queryset=Level.objects.all(), required=False,
-                                                  allow_null=True, write_only=True)
-    level_name = serializers.CharField(source='level.name', read_only=True)
-    language_ids = serializers.PrimaryKeyRelatedField(many=True, source='languages',
-                                                      queryset=ProgLanguage.objects.all(), write_only=True)
-    language_names = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name', source='languages')
-    project_id = serializers.IntegerField(source='project.id', read_only=True)
+    owner_id = serializers.PrimaryKeyRelatedField(source="host", read_only=True)
+    owner_name = serializers.CharField(source="host.username", read_only=True)
+    owner_avatar_url = serializers.CharField(source="owner.photo", read_only=True)
+    stack_id = serializers.PrimaryKeyRelatedField(
+        source="stack", queryset=Stack.objects.all(), write_only=True
+    )
+    stack_name = serializers.CharField(source="stack.name", read_only=True)
+    level_id = serializers.PrimaryKeyRelatedField(
+        source="level",
+        queryset=Level.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
+    level_name = serializers.CharField(source="level.name", read_only=True)
+    language_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source="languages",
+        queryset=ProgLanguage.objects.all(),
+        write_only=True,
+    )
+    language_names = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field="name", source="languages"
+    )
+    project_id = serializers.IntegerField(source="project.id", read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
-    project_name = serializers.CharField(source='project.name', read_only=True)
+    project_name = serializers.CharField(source="project.name", read_only=True)
 
     class Meta:
         model = Session
         fields = [
-            'id', 'name', 'description', 'schedule_date_time', 'duration',
-            'stack_id', 'stack_name',
-            'level_id', 'level_name',
-            'language_ids', 'language_names',
-            'project_id', 'project_name', 'owner_id', 'owner_name'
+            "id",
+            "name",
+            "description",
+            "schedule_date_time",
+            "duration",
+            "stack_id",
+            "stack_name",
+            "level_id",
+            "level_name",
+            "language_ids",
+            "language_names",
+            "project_id",
+            "project_name",
+            "owner_id",
+            "owner_name",
+            "owner_avatar_url",
         ]
 
     def validate_languages(self, value):
@@ -59,11 +84,11 @@ class SessionDetailSerializer(SessionSerializer):
 
     class Meta(SessionSerializer.Meta):
         fields = SessionSerializer.Meta.fields + [
-            'session_link',
-            'active',
-            'public',
-            'participant_count',
-            'project_name'
+            "session_link",
+            "active",
+            "public",
+            "participant_count",
+            "project_name",
         ]
 
     def get_participant_count(self, obj):
@@ -78,7 +103,6 @@ class SessionParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = ["participants"]
-
 
 
 class ProjectSerializer(serializers.ModelSerializer):
