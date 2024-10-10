@@ -110,6 +110,30 @@ class InvitationService:
             raise ValidationError(f"Failed to send invitation: {str(e)}")
 
 
+class InterestNotificationService:
+    def __init__(self, session, interested_user):
+        self.session = session
+        self.interested_user = interested_user
+
+    def send_notification(self):
+        try:
+            EmailService.send_interest_notification_email(self.session, self.interested_user)
+        except Exception as e:
+            raise ValidationError(f"Failed to send interest notification: {str(e)}")
+
+
+class ConfirmationNotificationService:
+    def __init__(self, session, developer):
+        self.session = session
+        self.developer = developer
+
+    def send_confirmation(self):
+        try:
+            EmailService.send_confirmation_email(self.session, self.developer)
+        except Exception as e:
+            raise ValidationError(f"Failed to send confirmation email: {str(e)}")
+
+
 class SessionSuggestionService:
     def __init__(self, user):
         self.user = user

@@ -5,10 +5,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from users.models import CustomUser
 from users.serializers import CustomUserSerializer
-
 from .email_service import EmailService
 from .models import InterestedParticipant, Project, Session
 from .serializers import (
@@ -23,6 +21,8 @@ from .services import (
     InvitationService,
     SessionCreationService,
     SessionSuggestionService,
+    InterestNotificationService,
+    ConfirmationNotificationService,
 )
 
 
@@ -93,6 +93,9 @@ class ConfirmParticipantView(APIView):
 
             session.participants.add(developer)
 
+            confirmation_service = ConfirmationNotificationService(session, developer)
+            confirmation_service.send_confirmation()
+
             return Response(
                 {
                     "message": f"Developer {developer.username} has been confirmed for the session."
@@ -119,9 +122,6 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        """
-        Create a new interested participant
-        """
         try:
             session_id = self.request.data.get("session")
             if not session_id:
@@ -135,6 +135,9 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
                 raise ValidationError("You are already interested in this session.")
 
             interested_participant = serializer.save(user=self.request.user)
+
+            notification_service = InterestNotificationService(session, self.request.user)
+            notification_service.send_notification()
 
             return Response(
                 {
@@ -154,9 +157,6 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="interested-users")
     def get_interested_users(self, request, pk=None):
-        """
-        Get all interested users for a session
-        """
         session = get_object_or_404(Session, id=pk)
         interested_participants = InterestedParticipant.objects.filter(
             session=session
