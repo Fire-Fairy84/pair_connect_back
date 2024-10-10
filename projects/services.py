@@ -200,6 +200,9 @@ class SessionCreationService:
 
             session_data.pop('project', None)
             languages = session_data.pop('languages', None)
+            is_private = session_data.pop('is_private', None)
+            if is_private is not None:
+                session_data['public'] = not is_private
 
             session = Session.objects.create(
                 project=project,
