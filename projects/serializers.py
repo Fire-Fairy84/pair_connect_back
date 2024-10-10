@@ -111,7 +111,7 @@ class SessionParticipantSerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source="owner.username", read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source="owner", read_only=True)
-    owner_avatar_url = serializers.CharField(source="owner.photo", read_only=True)
+    owner_avatar_url = serializers.SerializerMethodField()
     image_url = serializers.CharField(source="image.url", read_only=True)
     stack = serializers.PrimaryKeyRelatedField(
         queryset=Stack.objects.all(), write_only=True
@@ -180,6 +180,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("At least one language must be selected.")
         return value
+
+    def get_owner_avatar_url(self, obj):
+        if obj.owner and obj.owner.photo:
+            base_url = "https://res.cloudinary.com/dwzqcmaod/image/upload/"
+            return f"{base_url}{obj.owner.photo}"
+        return None
 
 
 class InterestedParticipantSerializer(serializers.ModelSerializer):
