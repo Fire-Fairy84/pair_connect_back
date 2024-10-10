@@ -122,6 +122,18 @@ class InterestNotificationService:
             raise ValidationError(f"Failed to send interest notification: {str(e)}")
 
 
+class ConfirmationNotificationService:
+    def __init__(self, session, developer):
+        self.session = session
+        self.developer = developer
+
+    def send_confirmation(self):
+        try:
+            EmailService.send_confirmation_email(self.session, self.developer)
+        except Exception as e:
+            raise ValidationError(f"Failed to send confirmation email: {str(e)}")
+
+
 class SessionSuggestionService:
     def __init__(self, user):
         self.user = user
