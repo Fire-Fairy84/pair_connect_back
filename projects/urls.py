@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CheckUserInterestView,
+    CheckUserParticipationView,
     ConfirmParticipantView,
     InterestedParticipantViewSet,
     ProjectViewSet,
@@ -72,6 +73,11 @@ urlpatterns = [
         "users/sessions/interested/",
         UserInterestedSessionsView.as_view(),
         name="user_interested_sessions",
+    ),
+    path(
+        "sessions/<int:session_id>/check-user/<int:user_id>/",
+        CheckUserParticipationView.as_view(),
+        name="check_user_participation",
     ),
     path("users/sessions/", UserSessionsView.as_view(), name="user_sessions"),
     path("", include(router.urls)),

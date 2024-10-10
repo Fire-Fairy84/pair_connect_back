@@ -6,28 +6,6 @@ from users.serializers import PrivateDeveloperSerializer, PublicDeveloperSeriali
 
 from .models import CustomUser
 
-# class DeveloperDataService:
-#     def __init__(self, session_id, developer_id):
-#         self.session_id = session_id
-#         self.developer_id = developer_id
-
-#     def get_developer_data(self, public=True):
-#         try:
-#             session = Session.objects.get(id=self.session_id)
-#             developer = CustomUser.objects.get(id=self.developer_id)
-
-#             if public or developer not in session.participants.all():
-#                 return PublicDeveloperSerializer(developer).data
-#             else:
-#                 return PrivateDeveloperSerializer(developer).data
-
-#         except Session.DoesNotExist:
-#             raise ValidationError("Session not found")
-#         except CustomUser.DoesNotExist:
-#             raise ValidationError("Developer not found")
-#         except Exception as e:
-#             raise ValidationError(f"Error retrieving developer data: {str(e)}")
-
 
 class UserProfileService:
     def __init__(self, viewer, user_id):
@@ -50,16 +28,30 @@ class UserProfileService:
         """
         try:
             user = CustomUser.objects.get(id=self.user_id)
-
             if not session:
-                return PublicDeveloperSerializer(user).data
+                return {
+                    "profile_data": PublicDeveloperSerializer(user).data,
+                    "has_permission": False,
+                }
 
-            if InterestedParticipant.objects.filter(
-                user=self.viewer, session=session
-            ).exists():
-                return PrivateDeveloperSerializer(user).data
+            is_interested = InterestedParticipant.objects.filter(
+                user=user, session=session
+            ).exists()
 
-            return PublicDeveloperSerializer(user).data
+            print(
+                f"User being viewed: {user.username}, Session: {session.id}, Is Interested: {is_interested}"
+            )
+
+            if is_interested:
+                return {
+                    "profile_data": PrivateDeveloperSerializer(user).data,
+                    "has_permission": True,
+                }
+
+            return {
+                "profile_data": PublicDeveloperSerializer(user).data,
+                "has_permission": False,
+            }
 
         except CustomUser.DoesNotExist:
             raise ValidationError("User not found")
