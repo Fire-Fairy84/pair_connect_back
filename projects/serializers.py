@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from skills.models import Level, ProgLanguage, Stack
 from users.models import CustomUser
+from users.serializers import CustomUserSerializer
 
 from .models import InterestedParticipant, Project, Session
 
@@ -35,9 +36,7 @@ class SessionSerializer(serializers.ModelSerializer):
     project_id = serializers.IntegerField(source="project.id", read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
     project_name = serializers.CharField(source="project.name", read_only=True)
-    participants = serializers.SlugRelatedField(
-        queryset=CustomUser.objects.all(), slug_field="username", many=True, required=False
-    )
+    participants = CustomUserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Session
