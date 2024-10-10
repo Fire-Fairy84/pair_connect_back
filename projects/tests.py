@@ -4,9 +4,11 @@ from projects.serializers import ProjectSerializer
 from users.models import CustomUser
 from projects.models import Project, Session
 from skills.models import Stack, Level, ProgLanguage
+from datetime import datetime
+from django.urls import reverse
 
 
-# Utility function to authenticate a client using JWT
+
 def authenticate_client(client, user):
     """
     Authenticate the client using JWT for a given user.
@@ -70,14 +72,24 @@ def test_get_suggested_developers_success(client):
     level, _ = Level.objects.get_or_create(name='Junior')
     prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
 
-    project = Project.objects.create(owner=user, name='Test Project', stack=stack, level=level)
+    project = Project.objects.create(owner=user,
+                                     name='Test Project',
+                                     stack=stack,
+                                     level=level)
     project.languages.add(prog_language)
 
-    session = Session.objects.create(project=project, host=user, description='Test Session', stack=stack, level=level)
+    session = Session.objects.create(
+        project=project,
+        host=user,
+        description='Test Session',
+        stack=stack,
+        level=level,
+        schedule_date_time=datetime.now()
+    )
     session.languages.add(prog_language)
 
     # When: I request suggested developers
-    url = f'/api/sessions/{session.id}/suggested-developers/'
+    url = f'/api/projects/sessions/{session.id}/suggested-developers/'
     response = client.get(url)
 
     # Then: I should receive a list of suggested developers
@@ -95,27 +107,39 @@ def test_invite_developer_to_session_success(client):
     """
     # Given: I am the owner of a session
     user = CustomUser.objects.create_user(
-        username='owner', email='owner@example.com', password='password123'
+        username='owner',
+        email='owner@example.com',
+        password='password123'
     )
     authenticate_client(client, user)
 
     # And: A developer exists
     developer = CustomUser.objects.create_user(
-        username='developer', email='developer@example.com', password='password123'
+        username='developer',
+        email='developer@example.com',
+        password='password123'
     )
 
     stack, _ = Stack.objects.get_or_create(name='Backend')
     level, _ = Level.objects.get_or_create(name='Junior')
     prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
 
-    project = Project.objects.create(owner=user, name='Test Project', stack=stack, level=level)
+    project = Project.objects.create(owner=user,
+                                     name='Test Project',
+                                     stack=stack,
+                                     level=level)
     project.languages.add(prog_language)
 
-    session = Session.objects.create(project=project, host=user, description='Test Session', stack=stack, level=level)
+    session = Session.objects.create(project=project,
+                                     host=user,
+                                     description='Test Session',
+                                     stack=stack,
+                                     level=level,
+                                     schedule_date_time=datetime.now())
     session.languages.add(prog_language)
 
     # When: I invite the developer to the session
-    url = f'/api/sessions/{session.id}/developers/{developer.id}/invite/'
+    url = f'/api/projects/sessions/{session.id}/developers/{developer.id}/invite/'
     response = client.post(url)
 
     # Then: The developer should receive an invitation
@@ -147,14 +171,24 @@ def test_get_suggested_sessions_for_user_success(client):
     user.save()
 
     # Create a session that matches the user's skills
-    project = Project.objects.create(owner=user, name='Test Project', stack=stack, level=level)
+    project = Project.objects.create(
+        owner=user,
+        name='Test Project',
+        stack=stack,
+        level=level)
     project.languages.add(prog_language)
 
-    session = Session.objects.create(project=project, host=user, description='Test Session', stack=stack, level=level)
+    session = Session.objects.create(
+        project=project,
+        host=user,
+        description='Test Session',
+        stack=stack,
+        level=level,
+        schedule_date_time=datetime.now())
     session.languages.add(prog_language)
 
     # When: I request suggested sessions
-    url = '/api/users/suggested-sessions/'
+    url = reverse('suggested_sessions')
     response = client.get(url)
 
     # Then: I should receive a list of suggested sessions
@@ -186,6 +220,7 @@ def test_session_serializer_language_validation_error(client):
     # When: I include a language that is not part of the project
     url = '/api/projects/sessions/'
     data = {
+        'name': 'Test Session',
         'description': 'Test Session',
         'schedule_date_time': '2024-01-01T12:00:00Z',
         'duration': 7200,

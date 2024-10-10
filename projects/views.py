@@ -260,10 +260,8 @@ class CheckUserParticipationView(generics.GenericAPIView):
 def get_suggested_sessions_for_user(request):
     try:
         user = request.user
-
         session_suggestion_service = SessionSuggestionService(user)
         suggested_sessions = session_suggestion_service.get_suggested_sessions()
-
         serializer = SessionSerializer(suggested_sessions, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
