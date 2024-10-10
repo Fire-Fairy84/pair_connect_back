@@ -35,6 +35,9 @@ class SessionSerializer(serializers.ModelSerializer):
     project_id = serializers.IntegerField(source="project.id", read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
     project_name = serializers.CharField(source="project.name", read_only=True)
+    participants = serializers.SlugRelatedField(
+        queryset=CustomUser.objects.all(), slug_field="username", many=True, required=False
+    )
 
     class Meta:
         model = Session
@@ -55,6 +58,7 @@ class SessionSerializer(serializers.ModelSerializer):
             "owner_id",
             "owner_name",
             "owner_avatar_url",
+            "participants",
         ]
 
     def validate_languages(self, value):
