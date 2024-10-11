@@ -36,6 +36,7 @@ class SessionSerializer(serializers.ModelSerializer):
     project_id = serializers.IntegerField(source="project.id", read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
     project_name = serializers.CharField(source="project.name", read_only=True)
+    project_image_url = serializers.SerializerMethodField()
     participants = CustomUserSerializer(many=True, read_only=True)
     session_link = serializers.URLField(required=False, allow_blank=True)
     participant_limit = serializers.IntegerField(required=False, allow_null=True)
@@ -57,6 +58,7 @@ class SessionSerializer(serializers.ModelSerializer):
             "language_names",
             "project_id",
             "project_name",
+            "project_image_url",
             "owner_id",
             "owner_name",
             "owner_avatar_url",
@@ -94,6 +96,9 @@ class SessionSerializer(serializers.ModelSerializer):
         is_private = validated_data.get("is_private", None)
         if is_private is not None:
             instance.public = not is_private
+        participant_limit = validated_data.get('participant_limit', instance.participant_limit)
+        if participant_limit is None:
+            validated_data['participant_limit'] = 0
 
         instance.save()
         print("Updated Instance:", instance)
@@ -104,6 +109,11 @@ class SessionSerializer(serializers.ModelSerializer):
         representation["is_private"] = not instance.public
         return representation
 
+    def get_project_image_url(self, obj):
+        if obj.project and obj.project.image:
+            base_url = "https://res.cloudinary.com/dwzqcmaod/image/upload/"
+            return f"{base_url}{obj.project.image}"
+        return None
 
 class SessionDetailSerializer(SessionSerializer):
     session_link = serializers.URLField(read_only=True)
