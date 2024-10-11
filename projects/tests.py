@@ -215,18 +215,19 @@ def test_session_serializer_language_validation_error(client):
     other_language, _ = ProgLanguage.objects.get_or_create(name='Java')
 
     project = Project.objects.create(owner=user, name='Test Project', stack=stack, level=level)
-    project.languages.add(prog_language)  # Project only supports 'Python'
+    project.languages.add(prog_language)
 
     # When: I include a language that is not part of the project
     url = '/api/projects/sessions/'
     data = {
+        'project': project.id,
         'name': 'Test Session',
         'description': 'Test Session',
         'schedule_date_time': '2024-01-01T12:00:00Z',
         'duration': 7200,
         'stack_id': stack.id,
         'level_id': level.id,
-        'language_ids': [other_language.id]  # Invalid language 'Java'
+        'language_ids': [other_language.id]
     }
     response = client.post(url, data)
 

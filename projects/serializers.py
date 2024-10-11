@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from skills.models import Level, ProgLanguage, Stack
 from users.models import CustomUser
+from users.serializers import CustomUserSerializer
 
 from .models import InterestedParticipant, Project, Session
 
@@ -35,6 +36,10 @@ class SessionSerializer(serializers.ModelSerializer):
     project_id = serializers.IntegerField(source="project.id", read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
     project_name = serializers.CharField(source="project.name", read_only=True)
+    participants = CustomUserSerializer(many=True, read_only=True)
+    session_link = serializers.URLField(required=False, allow_blank=True)
+    participant_limit = serializers.IntegerField(required=False, allow_null=True)
+    is_private = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = Session
@@ -55,6 +60,11 @@ class SessionSerializer(serializers.ModelSerializer):
             "owner_id",
             "owner_name",
             "owner_avatar_url",
+            "participants",
+            "session_link",
+            "participant_limit",
+            "is_private",
+            "public",
         ]
 
     def validate_languages(self, value):
@@ -74,6 +84,25 @@ class SessionSerializer(serializers.ModelSerializer):
                 )
 
         return value
+
+    def update(self, instance, validated_data):
+        instance.session_link = validated_data.get("session_link", instance.session_link)
+        instance.participant_limit = validated_data.get("participant_limit", instance.participant_limit)
+        instance.description = validated_data.get("description", instance.description)
+        instance.schedule_date_time = validated_data.get("schedule_date_time", instance.schedule_date_time)
+        instance.duration = validated_data.get("duration", instance.duration)
+        is_private = validated_data.get("is_private", None)
+        if is_private is not None:
+            instance.public = not is_private
+
+        instance.save()
+        print("Updated Instance:", instance)
+        return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["is_private"] = not instance.public
+        return representation
 
 
 class SessionDetailSerializer(SessionSerializer):
@@ -108,7 +137,7 @@ class SessionParticipantSerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source="owner.username", read_only=True)
     owner_id = serializers.PrimaryKeyRelatedField(source="owner", read_only=True)
-    owner_avatar_url = serializers.CharField(source="owner.photo", read_only=True)
+    owner_avatar_url = serializers.SerializerMethodField()
     image_url = serializers.CharField(source="image.url", read_only=True)
     stack = serializers.PrimaryKeyRelatedField(
         queryset=Stack.objects.all(), write_only=True
@@ -177,6 +206,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("At least one language must be selected.")
         return value
+
+    def get_owner_avatar_url(self, obj):
+        if obj.owner and obj.owner.photo:
+            base_url = "https://res.cloudinary.com/dwzqcmaod/image/upload/"
+            return f"{base_url}{obj.owner.photo}"
+        return None
 
 
 class InterestedParticipantSerializer(serializers.ModelSerializer):
