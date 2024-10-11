@@ -49,6 +49,19 @@ class DeveloperSuggestionService:
                                                                                                          flat=True)
             print(f"Interested User IDs: {list(interested_user_ids)}")
 
+            participant_user_ids = self.session.participants.values_list('id', flat=True)
+            print(f"Participant User IDs: {list(participant_user_ids)}")
+
+            host_user = self.session.host
+            host_user_id = host_user.id if host_user else None
+            if host_user_id:
+                print(f"Session Host ID: {host_user_id} ({host_user.username})")
+
+            excluded_user_ids = list(interested_user_ids) + list(participant_user_ids)
+            if host_user_id:
+                excluded_user_ids.append(host_user_id)
+            print(f"Total Excluded User IDs (Interested + Participants + Host): {excluded_user_ids}")
+
             # Define the stack filter using names
             stack_filter = Q()
             if session_stack_name == 'Fullstack':
@@ -70,7 +83,7 @@ class DeveloperSuggestionService:
                 language_filter |= Q(prog_language__name=language_name)
 
             phase1_users = CustomUser.objects.exclude(
-                id__in=interested_user_ids
+                id__in=excluded_user_ids
             ).filter(
                 stack_filter,
                 level__name=session_level_name,
@@ -79,14 +92,18 @@ class DeveloperSuggestionService:
                 stack__isnull=False
             ).filter(language_filter).distinct()
 
-            print(f"Phase 1 Users: {list(phase1_users.values('id', 'username', 'stack__name', 'prog_language__name'))}")
+            print("Phase 1 Users:")
+            for user in phase1_users:
+                languages = ', '.join(user.prog_language.values_list('name', flat=True))
+                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
+            print("-" * 50)
 
             if phase1_users.count() >= 5:
                 return phase1_users
 
             # Phase 2: Relax the level filter
             phase2_users = CustomUser.objects.exclude(
-                id__in=interested_user_ids
+                id__in=excluded_user_ids
             ).filter(
                 stack_filter,
                 is_staff=False,
@@ -94,27 +111,45 @@ class DeveloperSuggestionService:
                 stack__isnull=False
             ).filter(language_filter).distinct()
 
-            print(f"Phase 2 Users: {list(phase2_users.values('id', 'username', 'stack__name', 'prog_language__name'))}")
+            print("Phase 2 Users:")
+            for user in phase2_users:
+                languages = ', '.join(user.prog_language.values_list('name', flat=True))
+                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
+            print("-" * 50)
 
             combined_users = list(phase1_users) + [user for user in phase2_users if user not in phase1_users]
 
             if len(combined_users) >= 5:
+                print("Combined Users after Phase 2:")
+                for user in combined_users[:5]:
+                    languages = ', '.join(user.prog_language.values_list('name', flat=True))
+                    print(
+                        f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
+                print("-" * 50)
                 return combined_users[:5]
 
             # Phase 3: Relax the language filter
             phase3_users = CustomUser.objects.exclude(
-                id__in=interested_user_ids
+                id__in=excluded_user_ids
             ).filter(
                 stack_filter,
                 is_staff=False,
                 stack__isnull=False
             ).distinct()
 
-            print(f"Phase 3 Users: {list(phase3_users.values('id', 'username', 'stack__name', 'prog_language__name'))}")
+            print("Phase 3 Users:")
+            for user in phase3_users:
+                languages = ', '.join(user.prog_language.values_list('name', flat=True))
+                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
+            print("-" * 50)
 
             final_users = combined_users + [user for user in phase3_users if user not in combined_users]
 
-            print(f"Final Suggested Users: {list(final_users)}")
+            print("Final Suggested Users:")
+            for user in final_users[:5]:
+                languages = ', '.join(user.prog_language.values_list('name', flat=True))
+                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
+            print("-" * 50)
 
             return final_users[:5]
 
