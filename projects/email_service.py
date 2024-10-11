@@ -60,6 +60,7 @@ class EmailService:
         except Exception as e:
             raise Exception(f"Error sending interest notification email: {str(e)}")
 
+
     @staticmethod
     def send_confirmation_email(session, developer):
         try:

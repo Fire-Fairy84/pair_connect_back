@@ -63,6 +63,12 @@ class SessionViewSet(viewsets.ModelViewSet):
         )
         serializer.instance = session
 
+    def update(self, request, *args, **kwargs):
+        print("Request Data:", request.data)
+        response = super().update(request, *args, **kwargs)
+        print("Response Data:", response.data)
+        return response
+
 
 class SessionsByProjectView(generics.ListAPIView):
     serializer_class = SessionSerializer
@@ -130,7 +136,7 @@ class InterestedParticipantViewSet(viewsets.ModelViewSet):
             session = get_object_or_404(Session, id=session_id)
 
             if InterestedParticipant.objects.filter(
-                user=self.request.user, session=session
+                    user=self.request.user, session=session
             ).exists():
                 raise ValidationError("You are already interested in this session.")
 
