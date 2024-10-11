@@ -42,7 +42,8 @@ class EmailService:
                 'owner_name': session.project.owner.username,
                 'interested_user': interested_user.username,
                 'session_name': session.name,
-                'session_link': f"http://localhost:5173/sessions/{session.id}/",
+
+                'session_link': f"http://localhost:5173/projects/{session.project.id}/sessions/{session.id}/",
             }
 
             html_content = render_to_string('emails/interest_notification_email.html', context)

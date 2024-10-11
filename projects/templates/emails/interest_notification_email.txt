@@ -1,6 +1,6 @@
 Hola, {{ owner_name }}!
 
-{{ interested_user }} está interesado en tu sesión "{{ session_name }}".
+{{ interested_user }} está interesadx en tu sesión "{{ session_name }}".
 
 Puedes ver más detalles de la sesión aquí: {{ session_link }}
 

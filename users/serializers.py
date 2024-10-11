@@ -38,7 +38,6 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
         user = super().create(validated_data)
 
-        # Assign ForeignKey fields
         if stack:
             user.stack = Stack.objects.get(id=stack)
         if level:
