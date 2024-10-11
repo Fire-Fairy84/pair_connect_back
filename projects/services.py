@@ -1,4 +1,5 @@
-from django.db.models import Q
+from django.db.models import Q, Case, When, IntegerField
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from users.models import CustomUser
 from .email_service import EmailService
@@ -167,26 +168,102 @@ class SessionSuggestionService:
 
     def get_suggested_sessions(self):
         try:
+            now = timezone.now()
             user_stack = self.user.stack
             user_level = self.user.level
             user_languages = list(self.user.prog_language.all())
-            suggested_sessions = Session.objects.filter(stack=user_stack)
-            if user_stack == 'Fullstack':
-                suggested_sessions = Session.objects.all()
-            elif user_stack == 'Frontend':
-                suggested_sessions = Session.objects.filter(stack__in=['Frontend', 'Fullstack'])
-            elif user_stack == 'Backend':
-                suggested_sessions = Session.objects.filter(stack__in=['Backend', 'Fullstack'])
 
+            # Debug: Print user attributes
+            print(f"User ID: {self.user.id}")
+            print(f"User Stack: {user_stack.name if user_stack else 'None'}")
+            print(f"User Level: {user_level.name if user_level else 'None'}")
+            print(f"User Languages: {[lang.name for lang in user_languages]}")
+            print("-" * 50)
+
+            # Define stack compatibility based on user's stack
+            stack_compatible = self.get_stack_compatibility(user_stack)
+            # Debug: Print stack compatibility
+            print(
+                f"Compatible Stacks for User's Stack '{user_stack.name if user_stack else 'None'}': {stack_compatible}")
+            print("-" * 50)
+
+            # Base queryset: Exclude user's own sessions and past sessions
+            sessions = Session.objects.exclude(host=self.user).filter(schedule_date_time__gte=now)
+            # Debug: Print count after excluding user's own sessions and past sessions
+            print(f"Sessions after excluding user's own and past sessions: {sessions.count()}")
+
+            # Filter sessions that have at least one common language
             if user_languages:
-                suggested_sessions = suggested_sessions.filter(languages__in=user_languages).distinct()
+                language_filter = Q(languages__in=user_languages)
+                sessions = sessions.filter(language_filter).distinct()
+                # Debug: Print count after language filtering
+                print(f"Sessions after language filtering: {sessions.count()}")
+                print("-" * 50)
+            else:
+                # If the user has no languages, no sessions can be suggested based on languages
+                print("User has no programming languages specified. No sessions to suggest based on languages.")
+                print("-" * 50)
+                return Session.objects.none()
 
-            if user_level:
-                suggested_sessions = suggested_sessions.filter(level=user_level)
+            # Annotate each session with a priority based on matching criteria
+            sessions = sessions.annotate(
+                priority=Case(
+                    # Round 1: Same level, compatible stack
+                    When(
+                        Q(level=user_level) & Q(stack__name__in=stack_compatible),
+                        then=1
+                    ),
+                    # Round 2: Compatible stack only
+                    When(
+                        Q(stack__name__in=stack_compatible),
+                        then=2
+                    ),
+                    # Round 3: Only language match (handled by default)
+                    default=3,
+                    output_field=IntegerField()
+                )
+            )
 
-            return suggested_sessions
+            # Filter out sessions that don't match any of the three rounds
+            sessions = sessions.filter(priority__lte=3)
+            # Debug: Print count after filtering by priority
+            print(f"Sessions after filtering by priority (<=3): {sessions.count()}")
+            print("-" * 50)
+
+            # Order by priority and then by nearest date_time
+            sessions = sessions.order_by('priority', 'schedule_date_time')
+
+            # Debug: Print ordered sessions with detailed info
+            print("Ordered Sessions with Details:")
+            print("-" * 50)
+            ordered_sessions = sessions.select_related('level', 'stack').prefetch_related('languages').distinct()[:10]
+            for session in ordered_sessions:
+                languages = [lang.name for lang in session.languages.all()]
+                print(f"Session ID: {session.id}")
+                print(f"  Name: {session.name}")
+                print(f"  Priority: {session.priority}")
+                print(f"  Schedule DateTime: {session.schedule_date_time}")
+                print(f"  Level: {session.level.name if session.level else 'None'}")
+                print(f"  Stack: {session.stack.name if session.stack else 'None'}")
+                print(f"  Languages: {languages}")
+                print("-" * 50)
+
+            return sessions
+
         except Exception as e:
             raise ValidationError(f"Error retrieving suggested sessions: {str(e)}")
+
+    def get_stack_compatibility(self, user_stack):
+        """
+        Returns a list of compatible stack names based on the user's stack.
+        """
+        stack_mapping = {
+            'Fullstack': ['Fullstack', 'Frontend', 'Backend'],
+            'Frontend': ['Frontend', 'Fullstack'],
+            'Backend': ['Backend', 'Fullstack'],
+        }
+        stack_mapping.get(user_stack, [])
+        return stack_mapping.get(user_stack, [])
 
 
 class SessionCreationService:
