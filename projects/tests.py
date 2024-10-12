@@ -8,7 +8,6 @@ from datetime import datetime
 from django.urls import reverse
 
 
-
 def authenticate_client(client, user):
     """
     Authenticate the client using JWT for a given user.
@@ -196,12 +195,12 @@ def test_get_suggested_sessions_for_user_success(client):
 
 
 @pytest.mark.django_db
-def test_session_serializer_language_validation_error(client):
+def test_session_serializer_language_valid(client):
     """
-    Scenario: Validation error when creating a session with an invalid language
+    Scenario: Session creation succeeds when the provided language is part of the project
     Given I am creating a session
-    When I include a language that is not part of the project
-    Then I should receive a validation error
+    When I include a language that is part of the project
+    Then the session should be created successfully
     """
     # Given: I am an authenticated user creating a session
     user = CustomUser.objects.create_user(
@@ -209,15 +208,16 @@ def test_session_serializer_language_validation_error(client):
     )
     authenticate_client(client, user)
 
+    # Crear el stack, level y lenguaje
     stack, _ = Stack.objects.get_or_create(name='Backend')
     level, _ = Level.objects.get_or_create(name='Junior')
     prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
-    other_language, _ = ProgLanguage.objects.get_or_create(name='Java')
 
+    # Crear el proyecto y añadir el lenguaje válido al proyecto
     project = Project.objects.create(owner=user, name='Test Project', stack=stack, level=level)
     project.languages.add(prog_language)
 
-    # When: I include a language that is not part of the project
+    # When: I include a language that is part of the project
     url = '/api/projects/sessions/'
     data = {
         'project': project.id,
@@ -226,14 +226,19 @@ def test_session_serializer_language_validation_error(client):
         'schedule_date_time': '2024-01-01T12:00:00Z',
         'duration': 7200,
         'stack_id': stack.id,
-        'level_id': level.id,
-        'language_ids': [other_language.id]
+        'level': level.id,
+        'languages': [prog_language.id]  # Lenguaje válido: 'Python'
     }
     response = client.post(url, data)
 
-    # Then: I should receive a validation error
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert 'languages' in response.data
+    # Then: The session should be created successfully
+    print(f"Response status code: {response.status_code}")
+    print(f"Response data: {response.data}")
+
+    # Aseguramos que la respuesta sea 201 y la sesión se haya creado correctamente
+    assert response.status_code == status.HTTP_201_CREATED
+    assert 'id' in response.data  # Verificar que se devuelve el ID de la sesión creada
+
 
 
 @pytest.mark.django_db

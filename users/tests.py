@@ -57,6 +57,33 @@ def test_user_registration_missing_fields(client):
 
 
 @pytest.mark.django_db
+def test_user_registration_missing_fields(client):
+    """
+    Scenario: Registration fails due to missing required fields
+    Given I am a new user
+    When I register without providing all required fields
+    Then I should receive error messages indicating the missing fields
+    """
+
+    # Given: I am a new user
+    url = '/api/auth/users/'
+    data = {
+        'username': 'dumbledore',
+        # 'email' is missing
+        'name': 'Albus Dumbledore',
+        'password': 'mypassword123',
+        're_password': 'mypassword123',
+    }
+
+    # When: I register without providing the required 'email' field
+    response = client.post(url, data)
+
+    # Then: The registration should fail due to missing 'email' field
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'email' in response.data
+
+
+@pytest.mark.django_db
 def test_user_registration_password_mismatch(client):
     """
     Scenario: Registration fails due to non-matching passwords
@@ -177,6 +204,7 @@ def test_user_login_success(client):
     # Then: I should receive a JWT token
     assert response.status_code == status.HTTP_200_OK, f"Expected 200, got {response.status_code} with response {response.data}"
     assert 'access' in response.data
+
 
 @pytest.mark.django_db
 def test_user_login_without_activation_fail(client):
