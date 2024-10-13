@@ -1,9 +1,6 @@
 from rest_framework.exceptions import ValidationError
-
 from projects.models import InterestedParticipant, Session
-from users.models import CustomUser
 from users.serializers import PrivateDeveloperSerializer, PublicDeveloperSerializer
-
 from .models import CustomUser
 
 

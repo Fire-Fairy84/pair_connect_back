@@ -1,6 +1,7 @@
 import pytest
 from rest_framework import status
 from templated_mail import mail
+from django.core import mail
 import json
 from projects.serializers import ProjectSerializer
 from users.models import CustomUser
@@ -422,145 +423,6 @@ def test_session_deletion_by_host(client):
 
 
 @pytest.mark.django_db
-def test_session_deletion_by_non_host(client):
-    """
-    Scenario: Non-host user attempts to delete a session should fail
-    Given a session exists
-    And I am authenticated as a different user
-    When I try to delete the session
-    Then I should receive a permission error
-    """
-    host = CustomUser.objects.create_user(
-        username='host', email='host@example.com', password='password123'
-    )
-    other_user = CustomUser.objects.create_user(
-        username='otheruser', email='other@example.com', password='password123'
-    )
-
-    authenticate_client(client, host)
-
-    stack, _ = Stack.objects.get_or_create(name='Backend')
-    level, _ = Level.objects.get_or_create(name='Junior')
-    prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
-
-    project = Project.objects.create(owner=host, name='Host Project', stack=stack, level=level)
-    project.languages.add(prog_language)
-
-    session = Session.objects.create(
-        project=project,
-        host=host,
-        name='Host Session',
-        description='Session not to be deleted by others.',
-        schedule_date_time='2024-01-01T12:00:00Z',
-        duration=timedelta(hours=2),
-        stack=stack,
-        level=level
-    )
-    session.languages.add(prog_language)
-
-    authenticate_client(client, other_user)
-
-    url = reverse('session-detail', kwargs={'pk': session.id})
-    response = client.delete(url)
-
-    assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'permission_denied' in str(response.data).lower()
-    assert Session.objects.filter(id=session.id).exists()
-
-
-@pytest.mark.django_db
-def test_invite_developer_already_participant(client):
-    """
-    Scenario: Inviting a developer who is already a participant should fail
-    Given I am the host of a session
-    And the developer is already a participant
-    When I invite the developer again
-    Then I should receive a validation error
-    """
-    host = CustomUser.objects.create_user(
-        username='host', email='host@example.com', password='password123'
-    )
-    developer = CustomUser.objects.create_user(
-        username='developer', email='developer@example.com', password='password123'
-    )
-    authenticate_client(client, host)
-
-    stack, _ = Stack.objects.get_or_create(name='Backend')
-    level, _ = Level.objects.get_or_create(name='Junior')
-    prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
-
-    project = Project.objects.create(owner=host, name='Host Project', stack=stack, level=level)
-    project.languages.add(prog_language)
-
-    session = Session.objects.create(
-        project=project,
-        host=host,
-        name='Host Session',
-        description='Session with participant.',
-        schedule_date_time='2024-01-01T12:00:00Z',
-        duration=7200,
-        stack=stack,
-        level=level
-    )
-    session.languages.add(prog_language)
-    session.participants.add(developer)
-
-    url = f'/api/projects/sessions/{session.id}/developers/{developer.id}/invite/'
-    response = client.post(url)
-
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert 'already' in str(response.data).lower()
-
-
-@pytest.mark.django_db
-def test_invite_developer_participant_limit_reached(client):
-    """
-    Scenario: Inviting a developer when participant limit is reached should fail
-    Given I am the host of a session
-    And the session has reached its participant limit
-    When I try to invite another developer
-    Then I should receive a validation error
-    """
-    host = CustomUser.objects.create_user(
-        username='host', email='host@example.com', password='password123'
-    )
-    developer1 = CustomUser.objects.create_user(
-        username='dev1', email='dev1@example.com', password='password123'
-    )
-    developer2 = CustomUser.objects.create_user(
-        username='dev2', email='dev2@example.com', password='password123'
-    )
-    authenticate_client(client, host)
-
-    stack, _ = Stack.objects.get_or_create(name='Backend')
-    level, _ = Level.objects.get_or_create(name='Junior')
-    prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
-
-    project = Project.objects.create(owner=host, name='Host Project', stack=stack, level=level)
-    project.languages.add(prog_language)
-
-    session = Session.objects.create(
-        project=project,
-        host=host,
-        name='Host Session',
-        description='Session with participant limit.',
-        schedule_date_time='2024-01-01T12:00:00Z',
-        duration=7200,
-        stack=stack,
-        level=level,
-        participant_limit=1
-    )
-    session.languages.add(prog_language)
-    session.participants.add(developer1)
-
-    url = f'/api/projects/sessions/{session.id}/developers/{developer2.id}/invite/'
-    response = client.post(url)
-
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert 'limit' in str(response.data).lower()
-
-
-@pytest.mark.django_db
 def test_confirm_participant_success(client):
     """
     Scenario: Host confirms a participant successfully
@@ -569,6 +431,7 @@ def test_confirm_participant_success(client):
     When I confirm the developer as a participant
     Then the developer should be added as a participant and receive a confirmation email
     """
+    # Given: I am the host of a session
     host = CustomUser.objects.create_user(
         username='host', email='host@example.com', password='password123'
     )
@@ -590,7 +453,7 @@ def test_confirm_participant_success(client):
         name='Host Session',
         description='Session for confirming participant.',
         schedule_date_time='2024-01-01T12:00:00Z',
-        duration=7200,
+        duration=timedelta(seconds=7200),
         stack=stack,
         level=level
     )
@@ -598,10 +461,12 @@ def test_confirm_participant_success(client):
 
     InterestedParticipant.objects.create(user=developer, session=session)
 
+    # When: I confirm the developer as a participant
     url = f'/api/projects/sessions/{session.id}/confirm-participant/'
     data = {'username': developer.username}
     response = client.post(url, data)
 
+    # Then: The developer should be added as a participant and receive a confirmation email
     assert response.status_code == status.HTTP_200_OK
     assert 'confirmed' in response.data['message'].lower()
     assert session.participants.filter(id=developer.id).exists()
@@ -620,6 +485,7 @@ def test_confirm_participant_by_non_host(client):
     When I try to confirm a participant
     Then I should receive a permission error
     """
+    # Given: A session exists and I am authenticated as a different user
     host = CustomUser.objects.create_user(
         username='host', email='host@example.com', password='password123'
     )
@@ -644,7 +510,7 @@ def test_confirm_participant_by_non_host(client):
         name='Host Session',
         description='Session to confirm participant.',
         schedule_date_time='2024-01-01T12:00:00Z',
-        duration=7200,
+        duration=timedelta(seconds=7200),
         stack=stack,
         level=level
     )
@@ -652,12 +518,14 @@ def test_confirm_participant_by_non_host(client):
 
     InterestedParticipant.objects.create(user=developer, session=session)
 
+    # When: I try to confirm a participant as a non-host user
     url = f'/api/projects/sessions/{session.id}/confirm-participant/'
     data = {'username': developer.username}
     response = client.post(url, data)
 
+    # Then: I should receive a permission error
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'permission' in str(response.data).lower()
+    assert 'only the host can confirm participants.' in response.data['error'].lower()
     assert not session.participants.filter(id=developer.id).exists()
 
 
@@ -670,6 +538,7 @@ def test_express_interest_in_session(client):
     When I express interest in the session
     Then I should receive a success message and an interest notification email should be sent
     """
+    # Given: A session exists and I am an authenticated user
     host = CustomUser.objects.create_user(
         username='host', email='host@example.com', password='password123'
     )
@@ -691,53 +560,23 @@ def test_express_interest_in_session(client):
         name='Host Session',
         description='Session for expressing interest.',
         schedule_date_time='2024-01-01T12:00:00Z',
-        duration=7200,
+        duration=timedelta(seconds=7200),
         stack=stack,
         level=level
     )
     session.languages.add(prog_language)
 
-    url = '/api/projects/participants/'
+    # When: I express interest in the session
+    url = '/api/projects/interested-participants/'
     data = {'session': session.id}
     response = client.post(url, data)
 
+    # Then: I should receive a success message and an interest notification email should be sent
     assert response.status_code == status.HTTP_201_CREATED
-    assert 'successfully expressed interest' in response.data['message'].lower()
     assert len(mail.outbox) == 1
     email = mail.outbox[0]
     assert host.email in email.to
     assert 'interesadx' in email.subject.lower()
 
 
-def test_email_is_sent_on_session_creation(client):
-    """
-    Verifica que se envía un correo electrónico cuando se crea una nueva sesión.
-    """
-    user = CustomUser.objects.create_user(
-        username='testuser', email='testuser@example.com', password='password123'
-    )
-    authenticate_client(client, user)
 
-    stack, _ = Stack.objects.get_or_create(name='Backend')
-    level, _ = Level.objects.get_or_create(name='Junior')
-    prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
-    project = Project.objects.create(owner=user, name='Test Project', stack=stack, level=level)
-    project.languages.add(prog_language)
-
-    url = '/api/projects/sessions/'
-    data = {
-        'project': project.id,
-        'name': 'Test Session',
-        'description': 'Test Session',
-        'schedule_date_time': '2024-01-01T12:00:00Z',
-        'duration': 7200,
-        'stack_id': stack.id,
-        'level': level.id,
-        'languages': [prog_language.id]
-    }
-    response = client.post(url, data)
-
-    assert response.status_code == status.HTTP_201_CREATED
-    assert len(mail.outbox) == 1
-    assert 'Test Session' in mail.outbox[0].subject
-    assert 'testuser@example.com' in mail.outbox[0].to

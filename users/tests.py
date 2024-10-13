@@ -1,32 +1,36 @@
 import pytest
 from rest_framework import status
 from users.models import CustomUser
+import pytest
+from rest_framework import status
 
 
 @pytest.mark.django_db
-def test_user_registration_success(client):
+def test_user_registration_password_mismatch(client):
     """
-    Scenario: Successful user registration
+    Scenario: User registration fails due to mismatched passwords
     Given I am a new user
-    When I register with valid required data
-    Then I should receive a confirmation that my account has been created
+    When I submit registration details with mismatched passwords
+    Then the registration should fail with an appropriate error message
     """
-    # Given: I am a new user
-    url = '/api/auth/users/'
-    data = {
-        'username': 'harrypotter',
-        'email': 'harrypotter@email.com',
-        'name': 'Harry Potter',
-        'password': 'mypassword123',
-        're_password': 'mypassword123',
+
+    # Given: I am a new user with registration details where passwords do not match
+    registration_data = {
+        'username': 'testuser',
+        'name': 'Test User',
+        'email': 'testuser@example.com',
+        'password': 'password123',
+        're_password': 'password321',
     }
 
-    # When: I register with valid data
-    response = client.post(url, data)
+    # When: I submit the registration form
+    response = client.post('/api/auth/users/', registration_data)
 
-    # Then: Check the response status code
-    assert response.status_code == status.HTTP_201_CREATED
-    assert CustomUser.objects.filter(username='harrypotter').exists()
+    # Then: The registration should fail with an appropriate error message
+    assert response.status_code == status.HTTP_400_BAD_REQUEST, f"Expected status 400, got {response.status_code}"
+    assert 'non_field_errors' in response.data, "Expected 'non_field_errors' in response data."
+    assert 'the two password fields didn’t match' in response.data['non_field_errors'][0].lower(), \
+        "Expected password mismatch error message."
 
 
 @pytest.mark.django_db

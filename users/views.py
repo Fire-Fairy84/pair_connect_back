@@ -6,9 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from projects.models import Session
-
 from .services import UserProfileService
 
 User = get_user_model()
