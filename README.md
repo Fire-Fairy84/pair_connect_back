@@ -266,10 +266,22 @@ This project was created by:
 ## Demo 👓
 Here are some screenshots of the Pair Connect application:
 
-Home
+1. Home Page. 
 
-User Profile Page
+![!Home Page](images/PC_screen_home.jpg)
 
-Session Suggestions
+2. Pair Programming Page.
 
-My projects
+![!Pair Programming Page](images/PC_screen_pairprogramming.jpg)
+
+3. Profile Page.
+
+![!Profile Page](images/PC_screen_profile.jpg)
+
+4. Sessions Page.
+
+![!Sessions Page](images/PC_screen_sessions.jpg)
+
+5. Session Details Page.
+
+![!Session Details Page](images/PC_screen_sessionDetails.jpg)
