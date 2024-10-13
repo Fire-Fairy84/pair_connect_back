@@ -42,27 +42,17 @@ class DeveloperSuggestionService:
             session_level_name = self.session.level.name if self.session.level else None
             session_language_names = list(self.session.languages.values_list('name', flat=True))
 
-            print(
-                f"Session Stack: {session_stack_name}, Level: {session_level_name}, Languages: {session_language_names}")
-
             interested_user_ids = InterestedParticipant.objects.filter(session=self.session).values_list('user_id',
                                                                                                          flat=True)
-            print(f"Interested User IDs: {list(interested_user_ids)}")
-
             participant_user_ids = self.session.participants.values_list('id', flat=True)
-            print(f"Participant User IDs: {list(participant_user_ids)}")
 
             host_user = self.session.host
             host_user_id = host_user.id if host_user else None
-            if host_user_id:
-                print(f"Session Host ID: {host_user_id} ({host_user.username})")
 
             excluded_user_ids = list(interested_user_ids) + list(participant_user_ids)
             if host_user_id:
                 excluded_user_ids.append(host_user_id)
-            print(f"Total Excluded User IDs (Interested + Participants + Host): {excluded_user_ids}")
 
-            # Define the stack filter using names
             stack_filter = Q()
             if session_stack_name == 'Fullstack':
                 stack_filter = Q(stack__name='Fullstack') | Q(stack__name='Frontend') | Q(stack__name='Backend')
@@ -71,13 +61,11 @@ class DeveloperSuggestionService:
             elif session_stack_name == 'Backend':
                 stack_filter = Q(stack__name='Backend') | Q(stack__name='Fullstack')
 
-            # Exclude incompatible stacks
             if session_stack_name == 'Frontend':
                 stack_filter &= ~Q(stack__name='Backend')
             elif session_stack_name == 'Backend':
                 stack_filter &= ~Q(stack__name='Frontend')
 
-            # Phase 1: Match stack, level, and at least one language
             language_filter = Q()
             for language_name in session_language_names:
                 language_filter |= Q(prog_language__name=language_name)
@@ -92,16 +80,9 @@ class DeveloperSuggestionService:
                 stack__isnull=False
             ).filter(language_filter).distinct()
 
-            print("Phase 1 Users:")
-            for user in phase1_users:
-                languages = ', '.join(user.prog_language.values_list('name', flat=True))
-                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
-            print("-" * 50)
-
             if phase1_users.count() >= 5:
                 return phase1_users
 
-            # Phase 2: Relax the level filter
             phase2_users = CustomUser.objects.exclude(
                 id__in=excluded_user_ids
             ).filter(
@@ -111,24 +92,11 @@ class DeveloperSuggestionService:
                 stack__isnull=False
             ).filter(language_filter).distinct()
 
-            print("Phase 2 Users:")
-            for user in phase2_users:
-                languages = ', '.join(user.prog_language.values_list('name', flat=True))
-                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
-            print("-" * 50)
-
             combined_users = list(phase1_users) + [user for user in phase2_users if user not in phase1_users]
 
             if len(combined_users) >= 5:
-                print("Combined Users after Phase 2:")
-                for user in combined_users[:5]:
-                    languages = ', '.join(user.prog_language.values_list('name', flat=True))
-                    print(
-                        f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
-                print("-" * 50)
                 return combined_users[:5]
 
-            # Phase 3: Relax the language filter
             phase3_users = CustomUser.objects.exclude(
                 id__in=excluded_user_ids
             ).filter(
@@ -137,19 +105,7 @@ class DeveloperSuggestionService:
                 stack__isnull=False
             ).distinct()
 
-            print("Phase 3 Users:")
-            for user in phase3_users:
-                languages = ', '.join(user.prog_language.values_list('name', flat=True))
-                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
-            print("-" * 50)
-
             final_users = combined_users + [user for user in phase3_users if user not in combined_users]
-
-            print("Final Suggested Users:")
-            for user in final_users[:5]:
-                languages = ', '.join(user.prog_language.values_list('name', flat=True))
-                print(f" - ID: {user.id}, Username: {user.username}, Stack: {user.stack.name}, Languages: {languages}, Level: {user.level.name}")
-            print("-" * 50)
 
             return final_users[:5]
 
@@ -208,90 +164,40 @@ class SessionSuggestionService:
             user_level = self.user.level
             user_languages = list(self.user.prog_language.all())
 
-            # Debug: Print user attributes
-            print(f"User ID: {self.user.id}")
-            print(f"User Stack: {user_stack.name if user_stack else 'None'}")
-            print(f"User Level: {user_level.name if user_level else 'None'}")
-            print(f"User Languages: {[lang.name for lang in user_languages]}")
-            print("-" * 50)
-
-            # Define stack compatibility based on user's stack
             stack_compatible = self.get_stack_compatibility(user_stack)
-            # Debug: Print stack compatibility
-            print(
-                f"Compatible Stacks for User's Stack '{user_stack.name if user_stack else 'None'}': {stack_compatible}")
-            print("-" * 50)
-
-            # Base queryset: Exclude user's own sessions and past sessions
             sessions = Session.objects.exclude(host=self.user).filter(schedule_date_time__gte=now)
-            # Debug: Print count after excluding user's own sessions and past sessions
-            print(f"Sessions after excluding user's own and past sessions: {sessions.count()}")
 
-            # Filter sessions that have at least one common language
             if user_languages:
                 language_filter = Q(languages__in=user_languages)
                 sessions = sessions.filter(language_filter).distinct()
-                # Debug: Print count after language filtering
-                print(f"Sessions after language filtering: {sessions.count()}")
-                print("-" * 50)
             else:
-                # If the user has no languages, no sessions can be suggested based on languages
-                print("User has no programming languages specified. No sessions to suggest based on languages.")
-                print("-" * 50)
                 return Session.objects.none()
 
-            # Annotate each session with a priority based on matching criteria
             sessions = sessions.annotate(
                 priority=Case(
-                    # Round 1: Same level, compatible stack
                     When(
                         Q(level=user_level) & Q(stack__name__in=stack_compatible),
                         then=1
                     ),
-                    # Round 2: Compatible stack only
                     When(
                         Q(stack__name__in=stack_compatible),
                         then=2
                     ),
-                    # Round 3: Only language match (handled by default)
                     default=3,
                     output_field=IntegerField()
                 )
             )
 
-            # Filter out sessions that don't match any of the three rounds
             sessions = sessions.filter(priority__lte=3)
-            # Debug: Print count after filtering by priority
-            print(f"Sessions after filtering by priority (<=3): {sessions.count()}")
-            print("-" * 50)
-
-            # Order by priority and then by nearest date_time
             sessions = sessions.order_by('priority', 'schedule_date_time')
+            suggested_sessions = sessions.select_related('level', 'stack').prefetch_related('languages').distinct()[:10]
 
-            # Debug: Print ordered sessions with detailed info
-            print("Ordered Sessions with Details:")
-            print("-" * 50)
-            ordered_sessions = sessions.select_related('level', 'stack').prefetch_related('languages').distinct()[:10]
-            for session in ordered_sessions:
-                languages = [lang.name for lang in session.languages.all()]
-                print(f"Session ID: {session.id}")
-                print(f"  Name: {session.name}")
-                print(f"  Priority: {session.priority}")
-                print(f"  Schedule DateTime: {session.schedule_date_time}")
-                print(f"  Level: {session.level.name if session.level else 'None'}")
-                print(f"  Stack: {session.stack.name if session.stack else 'None'}")
-                print(f"  Languages: {languages}")
-                print("-" * 50)
-
-            return sessions
+            return suggested_sessions
 
         except Exception as e:
             raise ValidationError(f"Error retrieving suggested sessions: {str(e)}")
 
     def get_stack_compatibility(self, user_stack):
-        """
-        Returns a list of compatible stack names based on the user's stack.
-        """
         stack_mapping = {
             'Fullstack': ['Fullstack', 'Frontend', 'Backend'],
             'Frontend': ['Frontend', 'Fullstack'],
