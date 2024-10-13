@@ -3,10 +3,6 @@ from django.core.mail import EmailMessage
 
 
 def send_confirmation_email(user, token, request):
-    # confirmation_url = request.build_absolute_uri(
-    #     f"/api/auth/users/activation/?token={token}"
-    # )
-
     frontend_url = "http://localhost:3000" 
     confirmation_url = f"{frontend_url}/activate/{user.uid}/{token}/"
 
