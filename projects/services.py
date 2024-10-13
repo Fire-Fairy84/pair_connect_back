@@ -1,4 +1,5 @@
-from django.db.models import Q
+from django.db.models import Q, Case, When, IntegerField
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from users.models import CustomUser
 from .email_service import EmailService
@@ -41,14 +42,17 @@ class DeveloperSuggestionService:
             session_level_name = self.session.level.name if self.session.level else None
             session_language_names = list(self.session.languages.values_list('name', flat=True))
 
-            print(
-                f"Session Stack: {session_stack_name}, Level: {session_level_name}, Languages: {session_language_names}")
-
             interested_user_ids = InterestedParticipant.objects.filter(session=self.session).values_list('user_id',
                                                                                                          flat=True)
-            print(f"Interested User IDs: {list(interested_user_ids)}")
+            participant_user_ids = self.session.participants.values_list('id', flat=True)
 
-            # Define the stack filter using names
+            host_user = self.session.host
+            host_user_id = host_user.id if host_user else None
+
+            excluded_user_ids = list(interested_user_ids) + list(participant_user_ids)
+            if host_user_id:
+                excluded_user_ids.append(host_user_id)
+
             stack_filter = Q()
             if session_stack_name == 'Fullstack':
                 stack_filter = Q(stack__name='Fullstack') | Q(stack__name='Frontend') | Q(stack__name='Backend')
@@ -57,19 +61,17 @@ class DeveloperSuggestionService:
             elif session_stack_name == 'Backend':
                 stack_filter = Q(stack__name='Backend') | Q(stack__name='Fullstack')
 
-            # Exclude incompatible stacks
             if session_stack_name == 'Frontend':
                 stack_filter &= ~Q(stack__name='Backend')
             elif session_stack_name == 'Backend':
                 stack_filter &= ~Q(stack__name='Frontend')
 
-            # Phase 1: Match stack, level, and at least one language
             language_filter = Q()
             for language_name in session_language_names:
                 language_filter |= Q(prog_language__name=language_name)
 
             phase1_users = CustomUser.objects.exclude(
-                id__in=interested_user_ids
+                id__in=excluded_user_ids
             ).filter(
                 stack_filter,
                 level__name=session_level_name,
@@ -78,14 +80,11 @@ class DeveloperSuggestionService:
                 stack__isnull=False
             ).filter(language_filter).distinct()
 
-            print(f"Phase 1 Users: {list(phase1_users.values('id', 'username', 'stack__name', 'prog_language__name'))}")
-
             if phase1_users.count() >= 5:
                 return phase1_users
 
-            # Phase 2: Relax the level filter
             phase2_users = CustomUser.objects.exclude(
-                id__in=interested_user_ids
+                id__in=excluded_user_ids
             ).filter(
                 stack_filter,
                 is_staff=False,
@@ -93,27 +92,20 @@ class DeveloperSuggestionService:
                 stack__isnull=False
             ).filter(language_filter).distinct()
 
-            print(f"Phase 2 Users: {list(phase2_users.values('id', 'username', 'stack__name', 'prog_language__name'))}")
-
             combined_users = list(phase1_users) + [user for user in phase2_users if user not in phase1_users]
 
             if len(combined_users) >= 5:
                 return combined_users[:5]
 
-            # Phase 3: Relax the language filter
             phase3_users = CustomUser.objects.exclude(
-                id__in=interested_user_ids
+                id__in=excluded_user_ids
             ).filter(
                 stack_filter,
                 is_staff=False,
                 stack__isnull=False
             ).distinct()
 
-            print(f"Phase 3 Users: {list(phase3_users.values('id', 'username', 'stack__name', 'prog_language__name'))}")
-
             final_users = combined_users + [user for user in phase3_users if user not in combined_users]
-
-            print(f"Final Suggested Users: {list(final_users)}")
 
             return final_users[:5]
 
@@ -167,26 +159,52 @@ class SessionSuggestionService:
 
     def get_suggested_sessions(self):
         try:
+            now = timezone.now()
             user_stack = self.user.stack
             user_level = self.user.level
             user_languages = list(self.user.prog_language.all())
-            suggested_sessions = Session.objects.filter(stack=user_stack)
-            if user_stack == 'Fullstack':
-                suggested_sessions = Session.objects.all()
-            elif user_stack == 'Frontend':
-                suggested_sessions = Session.objects.filter(stack__in=['Frontend', 'Fullstack'])
-            elif user_stack == 'Backend':
-                suggested_sessions = Session.objects.filter(stack__in=['Backend', 'Fullstack'])
+
+            stack_compatible = self.get_stack_compatibility(user_stack)
+            sessions = Session.objects.exclude(host=self.user).filter(schedule_date_time__gte=now)
 
             if user_languages:
-                suggested_sessions = suggested_sessions.filter(languages__in=user_languages).distinct()
+                language_filter = Q(languages__in=user_languages)
+                sessions = sessions.filter(language_filter).distinct()
+            else:
+                return Session.objects.none()
 
-            if user_level:
-                suggested_sessions = suggested_sessions.filter(level=user_level)
+            sessions = sessions.annotate(
+                priority=Case(
+                    When(
+                        Q(level=user_level) & Q(stack__name__in=stack_compatible),
+                        then=1
+                    ),
+                    When(
+                        Q(stack__name__in=stack_compatible),
+                        then=2
+                    ),
+                    default=3,
+                    output_field=IntegerField()
+                )
+            )
+
+            sessions = sessions.filter(priority__lte=3)
+            sessions = sessions.order_by('priority', 'schedule_date_time')
+            suggested_sessions = sessions.select_related('level', 'stack').prefetch_related('languages').distinct()[:10]
 
             return suggested_sessions
+
         except Exception as e:
             raise ValidationError(f"Error retrieving suggested sessions: {str(e)}")
+
+    def get_stack_compatibility(self, user_stack):
+        stack_mapping = {
+            'Fullstack': ['Fullstack', 'Frontend', 'Backend'],
+            'Frontend': ['Frontend', 'Fullstack'],
+            'Backend': ['Backend', 'Fullstack'],
+        }
+        stack_mapping.get(user_stack, [])
+        return stack_mapping.get(user_stack, [])
 
 
 class SessionCreationService:

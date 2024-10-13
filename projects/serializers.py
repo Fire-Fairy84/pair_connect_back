@@ -11,7 +11,7 @@ class SessionSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=255)
     owner_id = serializers.PrimaryKeyRelatedField(source="host", read_only=True)
     owner_name = serializers.CharField(source="host.username", read_only=True)
-    owner_avatar_url = serializers.CharField(source="owner.photo", read_only=True)
+    owner_avatar_url = serializers.ReadOnlyField(source="host.photo.url")
     stack_id = serializers.PrimaryKeyRelatedField(
         source="stack", queryset=Stack.objects.all(), write_only=True
     )
@@ -114,6 +114,7 @@ class SessionSerializer(serializers.ModelSerializer):
             base_url = "https://res.cloudinary.com/dwzqcmaod/image/upload/"
             return f"{base_url}{obj.project.image}"
         return None
+
 
 class SessionDetailSerializer(SessionSerializer):
     session_link = serializers.URLField(read_only=True)
