@@ -1,5 +1,3 @@
-import pytest
-from rest_framework import status
 from users.models import CustomUser
 import pytest
 from rest_framework import status
