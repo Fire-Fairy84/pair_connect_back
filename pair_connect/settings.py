@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-4)q*%jaifuf8+ol69yes+=$y)%dg@5-j^l2q)v7v60#wv+)i@o
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['pair-connect.herokuapp.com', 'localhost']
+ALLOWED_HOSTS = ['pair-connect-151ceba3fe72.herokuapp.com', 'localhost']
 
 
 INSTALLED_APPS = [
