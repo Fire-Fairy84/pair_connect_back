@@ -163,7 +163,6 @@ def test_get_suggested_sessions_for_user_success(client):
     )
     authenticate_client(client, user)
 
-    # Create necessary data for the session
     stack, _ = Stack.objects.get_or_create(name='Backend')
     level, _ = Level.objects.get_or_create(name='Junior')
     prog_language, _ = ProgLanguage.objects.get_or_create(name='Python')
@@ -173,7 +172,6 @@ def test_get_suggested_sessions_for_user_success(client):
     user.prog_language.add(prog_language)
     user.save()
 
-    # Create a session that matches the user's skills
     project = Project.objects.create(
         owner=user,
         name='Test Project',
@@ -246,6 +244,9 @@ def test_project_serializer_validation_error():
     When I try to create a project without required fields
     Then I should receive validation errors
     """
+    # Given: I am a logged-in user
+
+    # When: I try to create a project without required fields
     serializer_data = {
         'name': '',
         'stack': 1,
@@ -267,11 +268,13 @@ def test_session_creation_with_invalid_project_id(client):
     When I try to create a session with an invalid project ID
     Then I should receive a validation error
     """
+    # Given: I am an authenticated user
     user = CustomUser.objects.create_user(
         username='testuser', email='testuser@example.com', password='password123'
     )
     authenticate_client(client, user)
 
+    # When: I try to create a session with an invalid project ID
     url = '/api/projects/sessions/'
     data = {
         'project': 999,
@@ -285,6 +288,7 @@ def test_session_creation_with_invalid_project_id(client):
     }
     response = client.post(url, data)
 
+    # Then: I should receive a validation error
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'Project does not exist.' in str(response.data)
 
@@ -297,6 +301,7 @@ def test_session_creation_missing_required_fields(client):
     When I try to create a session without required fields
     Then I should receive validation errors
     """
+    # Given: I am an authenticated user
     user = CustomUser.objects.create_user(
         username='testuser', email='testuser@example.com', password='password123'
     )
@@ -309,6 +314,7 @@ def test_session_creation_missing_required_fields(client):
     project = Project.objects.create(owner=user, name='Test Project', stack=stack, level=level)
     project.languages.add(prog_language)
 
+    # When: I try to create a session without required fields
     url = '/api/projects/sessions/'
     data = {
         'project': project.id,
@@ -320,6 +326,7 @@ def test_session_creation_missing_required_fields(client):
     }
     response = client.post(url, data)
 
+    # Then: I should receive validation errors
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'name' in response.data
     assert 'schedule_date_time' in response.data
@@ -391,9 +398,12 @@ def test_session_deletion_by_host(client):
     When I delete the session
     Then the session should be deleted successfully
     """
+    # Given: a session exists
     host = CustomUser.objects.create_user(
         username='host', email='host@example.com', password='password123'
     )
+
+    # And I am authenticated as the host
     authenticate_client(client, host)
 
     stack, _ = Stack.objects.get_or_create(name='Backend')
@@ -415,9 +425,11 @@ def test_session_deletion_by_host(client):
     )
     session.languages.add(prog_language)
 
+    # When: I delete the session
     url = f'/api/projects/sessions/{session.id}/'
     response = client.delete(url)
 
+    # Then: the session should be deleted successfully
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not Session.objects.filter(id=session.id).exists()
 
