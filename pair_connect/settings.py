@@ -4,6 +4,7 @@ import cloudinary.api
 from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
+import django_heroku
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,7 +14,7 @@ SECRET_KEY = 'django-insecure-4)q*%jaifuf8+ol69yes+=$y)%dg@5-j^l2q)v7v60#wv+)i@o
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['pair-connect.com', 'localhost']
+ALLOWED_HOSTS = ['pair-connect.herokuapp.com', 'localhost']
 
 
 INSTALLED_APPS = [
@@ -60,6 +61,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://pair-connect.netlify.app',
 ]
 
 ROOT_URLCONF = 'pair_connect.urls'
@@ -146,8 +148,9 @@ cloudinary.config(
     api_secret=os.environ.get('API_SECRET'),
 )
 
-SITE_NAME = 'localhost:5173'
-DOMAIN = 'localhost:5173'
+SITE_NAME = os.getenv('SITE_NAME', 'localhost:5173')
+DOMAIN = os.getenv('DOMAIN', 'localhost:5173')
+
 
 DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': True,
@@ -186,4 +189,4 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-
+django_heroku.settings(locals())
