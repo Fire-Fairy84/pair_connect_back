@@ -1,0 +1,10 @@
+Hola, {{ developer_name }}!
+
+Has sido confirmadx para la sesión "{{ session_name }}".
+
+La sesión se llevará a cabo el {{ session_date }}. Puedes ver más detalles y unirte a la sesión aquí: {{ session_link }}.
+
+¡Te esperamos!
+
+Un saludo,
+El equipo de Pair Connect
