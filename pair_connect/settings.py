@@ -3,6 +3,8 @@ import os
 import cloudinary.api
 from datetime import timedelta
 from dotenv import load_dotenv
+import dj_database_url
+import django_heroku
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -10,9 +12,9 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = 'django-insecure-4)q*%jaifuf8+ol69yes+=$y)%dg@5-j^l2q)v7v60#wv+)i@o'
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['pair-connect-151ceba3fe72.herokuapp.com', 'localhost']
 
 
 INSTALLED_APPS = [
@@ -46,6 +48,7 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,6 +61,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://pair-connect.netlify.app',
 ]
 
 ROOT_URLCONF = 'pair_connect.urls'
@@ -94,6 +98,10 @@ DATABASES = {
     }
 }
 
+
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUD_NAME'),
     'API_KEY': os.environ.get('API_KEY'),
@@ -127,7 +135,10 @@ USE_I18N = True
 
 USE_TZ = False
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = 'static/'
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -137,8 +148,9 @@ cloudinary.config(
     api_secret=os.environ.get('API_SECRET'),
 )
 
-SITE_NAME = 'localhost:5173'
-DOMAIN = 'localhost:5173'
+SITE_NAME = os.getenv('SITE_NAME', 'localhost:5173')
+DOMAIN = os.getenv('DOMAIN', 'localhost:5173')
+
 
 DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': True,
@@ -177,4 +189,4 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-
+django_heroku.settings(locals())
