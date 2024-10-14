@@ -1,1 +1,1 @@
-web: gunicorn pair_connect.wsgi --log-file -
+web: gunicorn pair_connect.wsgi:application --log-file -
