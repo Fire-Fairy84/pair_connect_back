@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-4)q*%jaifuf8+ol69yes+=$y)%dg@5-j^l2q)v7v60#wv+)i@o
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['pair-connect-151ceba3fe72.herokuapp.com', 'localhost']
+ALLOWED_HOSTS = ['pair-connect-151ceba3fe72.herokuapp.com', 'pair-connect.netlify.app', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
@@ -58,11 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://pair-connect.netlify.app',
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'pair_connect.urls'
 
