@@ -12,9 +12,9 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = 'django-insecure-4)q*%jaifuf8+ol69yes+=$y)%dg@5-j^l2q)v7v60#wv+)i@o'
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True
 
-ALLOWED_HOSTS = ['pair-connect-151ceba3fe72.herokuapp.com', 'pair-connect.netlify.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = []
 
 
 INSTALLED_APPS = [
@@ -58,7 +58,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://pair-connect.netlify.app',
+]
 
 CORS_ALLOW_METHODS = [
     'GET',
@@ -108,7 +112,6 @@ if 'DATABASE_URL' in os.environ:
     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 STATIC_URL = '/static/'
-STATICFILES_STORAGE = 'cloudinary_storage.storage.StaticCloudinaryStorage'
 
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUD_NAME'),
