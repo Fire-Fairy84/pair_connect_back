@@ -17,6 +17,7 @@
 **Pair Connect** is a platform where developers can connect for pair programming sessions based on their skills, including stack, experience level, and programming languages, as well as project preferences.  
 
 The backend is built with Django and Django REST Framework, while the React-based frontend integrates the API to display session suggestions tailored to the user's skills and preferences.
+
 Frontend repository link: https://github.com/your-username/pair_connect_front
 
 ### Key Features
