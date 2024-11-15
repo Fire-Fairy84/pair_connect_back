@@ -18,7 +18,7 @@
 
 The backend is built with Django and Django REST Framework, while the React-based frontend integrates the API to display session suggestions tailored to the user's skills and preferences.
 
-[Frontend repository link ](https://github.com/0795PAO/pair_connect_front)
+[Go to frontend repository ](https://github.com/0795PAO/pair_connect_front)
 
 ### Key Features
 - User registration and authentication with **Djoser** and **JWT**.
